@@ -1,0 +1,1 @@
+Non official pstryk integration

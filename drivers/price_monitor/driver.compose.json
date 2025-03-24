@@ -1,0 +1,47 @@
+{
+    "id": "price_monitor",
+    "name": {
+        "en": "Electricity Price Monitor"
+    },
+    "class": "other",
+    "description": {
+        "en": "Monitors electricity prices from PSTryk API"
+    },
+    "capabilities": [],
+    "images": {
+        "large": "{{driverAssetsPath}}/images/large.png",
+        "small": "{{driverAssetsPath}}/images/small.png"
+    },
+    "pair": [
+        {
+            "id": "settings",
+            "template": "settings_template",
+            "title": {
+                "en": "API Configuration"
+            },
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "api_key": {
+                        "title": {"en": "API Key"},
+                        "type": "string",
+                        "required": true
+                    }
+                }
+            }
+        },
+        {
+            "id": "list_devices",
+            "template": "list_devices",
+            "navigation": {
+                "next": "add_devices"
+            }
+        }
+    ],
+    "compose": {
+        "driver": {
+            "class": "PriceMonitorDriver",
+            "file": "driver.js"
+        }
+    }
+}
