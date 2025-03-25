@@ -1,22 +1,78 @@
 {
-    "_comment": "This file is generated. Please edit .homeycompose/app.json instead.",
-    "id": "pl.pstryk",
-    "version": "1.0.0",
-    "compatibility": ">=5.0.0",
-    "sdk": 3,
-    "name": {
-        "en": "PSTRYK Electricity Prices"
-    },
-    "description": {
-        "en": "Monitor current and historical electricity prices from PSTRYK"
-    },
-    "category": ["energy"],
-    "permissions": [],
-    "images": {
-        "small": "/assets/images/small.png",
-        "large": "/assets/images/large.png"
-    },
-    "author": {
-        "name": "Your Name"
+  "_comment": "This file is generated. Please edit .homeycompose/app.json instead.",
+  "id": "pstryk.pl.jedrzejnowak",
+  "version": "0.0.1",
+  "compatibility": ">=12.3.0",
+  "sdk": 3,
+  "name": {
+    "en": "PSTRYK Electricity Price"
+  },
+  "description": {
+    "en": "Monitor current and historical electricity prices from PSTRYK"
+  },
+  "category": [
+    "energy"
+  ],
+  "permissions": [],
+  "images": {
+    "small": "/assets/images/small.png",
+    "large": "/assets/images/large.png"
+  },
+  "author": {
+    "name": "Jedrzej Nowak"
+  },
+  "drivers": [
+    {
+      "name": {
+        "en": "PSTRYK Price Monitor"
+      },
+      "class": "service",
+      "platforms": [
+        "local"
+      ],
+      "capabilities": [],
+      "connectivity": [],
+      "description": {
+        "en": "Monitors electricity prices from PSTRYK API"
+      },
+      "images": {
+        "small": "/drivers/pstryk_price/assets/images/small.png",
+        "large": "/drivers/pstryk_price/assets/images/large.png",
+        "xlarge": "/drivers/pstryk_price/assets/images/xlarge.png"
+      },
+      "pair": [
+        {
+          "id": "list_devices",
+          "template": "list_devices",
+          "navigation": {
+            "next": "add_devices"
+          },
+          "options": {
+            "singular": true
+          }
+        },
+        {
+          "id": "add_devices",
+          "template": "add_devices"
+        }
+      ],
+      "compose": {
+        "driver": {
+          "class": "PstrykPriceDriver",
+          "file": "driver.js"
+        }
+      },
+      "id": "pstryk_price",
+      "settings": [
+        {
+          "id": "apiKey",
+          "type": "text",
+          "label": {
+            "en": "Api KEY"
+          },
+          "value": ""
+        }
+      ]
     }
+  ]
 }

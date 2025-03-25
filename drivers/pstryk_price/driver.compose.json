@@ -1,0 +1,35 @@
+{
+    "name": {
+        "en": "PSTRYK Price Monitor"
+    },
+    "class": "service",
+    "platforms": ["local"],
+    "capabilities": [],
+    "connectivity": [],
+    "description": {
+        "en": "Monitors electricity prices from PSTRYK API"
+    },
+    "images": {
+        "small": "{{driverAssetsPath}}/images/small.png",
+        "large": "{{driverAssetsPath}}/images/large.png",
+        "xlarge": "{{driverAssetsPath}}/images/xlarge.png"
+    },
+    "pair": [
+        {
+            "id": "list_devices",
+            "template": "list_devices",
+            "navigation": { "next": "add_devices" },
+            "options": { "singular": true }
+        },
+        {
+            "id": "add_devices",
+            "template": "add_devices"
+        }
+    ],
+    "compose": {
+        "driver": {
+            "class": "PstrykPriceDriver",
+            "file": "driver.js"
+        }
+    }
+}
