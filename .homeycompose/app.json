@@ -1,0 +1,21 @@
+{
+    "id": "pstryk.pl.jedrzejnowak",
+    "version": "0.0.1",
+    "compatibility": ">=12.3.0",
+    "sdk": 3,
+    "name": {
+        "en": "PSTRYK Electricity Price"
+    },
+    "description": {
+        "en": "Monitor current and historical electricity prices from PSTRYK"
+    },
+    "category": ["energy"],
+    "permissions": [],
+    "images": {
+        "small": "/assets/images/small.png",
+        "large": "/assets/images/large.png"
+    },
+    "author": {
+        "name": "Jedrzej Nowak"
+    }
+}

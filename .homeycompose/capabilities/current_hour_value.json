@@ -1,0 +1,11 @@
+{
+    "title": {
+        "en": "current hour value"
+    },
+    "desc": {
+        "en": "current hour value, use this to cross check that everything works as expected"
+    },
+    "type": "string",
+    "getable": true,
+    "setable": false
+}

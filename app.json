@@ -21,6 +21,34 @@
   "author": {
     "name": "Jedrzej Nowak"
   },
+  "flow": {
+    "triggers": [
+      {
+        "id": "current_hour_price_changed",
+        "title": {
+          "en": "Current price changed"
+        },
+        "tokens": [
+          {
+            "name": "value",
+            "title": {
+              "en": "PLN/kWh"
+            },
+            "example": {
+              "en": "0.505"
+            }
+          }
+        ],
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=pstryk_price"
+          }
+        ]
+      }
+    ]
+  },
   "drivers": [
     {
       "name": {
@@ -74,5 +102,123 @@
         }
       ]
     }
-  ]
+  ],
+  "capabilities": {
+    "cheapest_h0": {
+      "title": {
+        "en": "next cheapest hour"
+      },
+      "desc": {
+        "en": "next chaepest hour starts at"
+      },
+      "type": "string",
+      "getable": true,
+      "setable": false
+    },
+    "cheapest_h0_value": {
+      "title": {
+        "en": "Cheapest price value"
+      },
+      "desc": {
+        "en": "Cheapest electricity price value"
+      },
+      "type": "number",
+      "min": 0,
+      "max": 5,
+      "decimals": 4,
+      "units": {
+        "en": "PLN/kWh"
+      },
+      "getable": true,
+      "setable": false,
+      "insigts": true
+    },
+    "cheapest_h1": {
+      "title": {
+        "en": "2nd next cheapest hour"
+      },
+      "desc": {
+        "en": "2nd next chaepest hour starts at"
+      },
+      "type": "string",
+      "getable": true,
+      "setable": false
+    },
+    "cheapest_h1_value": {
+      "title": {
+        "en": "2nd cheapest price value"
+      },
+      "desc": {
+        "en": "2nd cheapest electricity price value"
+      },
+      "type": "number",
+      "min": 0,
+      "max": 5,
+      "decimals": 4,
+      "units": {
+        "en": "PLN/kWh"
+      },
+      "getable": true,
+      "setable": false,
+      "insigts": true
+    },
+    "cheapest_h2": {
+      "title": {
+        "en": "3rd next cheapest hour"
+      },
+      "desc": {
+        "en": "3rd next chaepest hour starts at"
+      },
+      "type": "string",
+      "getable": true,
+      "setable": false
+    },
+    "cheapest_h2_value": {
+      "title": {
+        "en": "3rd cheapest price value"
+      },
+      "desc": {
+        "en": "3rd cheapest price value"
+      },
+      "type": "number",
+      "min": 0,
+      "max": 5,
+      "decimals": 4,
+      "units": {
+        "en": "PLN/kWh"
+      },
+      "getable": true,
+      "setable": false,
+      "insigts": true
+    },
+    "current_hour_price": {
+      "title": {
+        "en": "Current price"
+      },
+      "desc": {
+        "en": "Current electricity price"
+      },
+      "type": "number",
+      "min": 0,
+      "max": 5,
+      "decimals": 4,
+      "units": {
+        "en": "PLN/kWh"
+      },
+      "getable": true,
+      "setable": false,
+      "insigts": true
+    },
+    "current_hour_value": {
+      "title": {
+        "en": "current hour value"
+      },
+      "desc": {
+        "en": "current hour value, use this to cross check that everything works as expected"
+      },
+      "type": "string",
+      "getable": true,
+      "setable": false
+    }
+  }
 }

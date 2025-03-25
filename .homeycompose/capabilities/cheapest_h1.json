@@ -1,0 +1,11 @@
+{
+    "title": {
+        "en": "2nd next cheapest hour"
+    },
+    "desc": {
+        "en": "2nd next chaepest hour starts at"
+    },
+    "type": "string",
+    "getable": true,
+    "setable": false
+}

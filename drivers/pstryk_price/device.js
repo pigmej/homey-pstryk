@@ -11,7 +11,14 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
     this.log("PstrykPriceDevice has been initialized");
     this.settings = await this.getSettings();
 
-    await this.addCapability("meter_price");
+    await this.addCapability("current_hour_price");
+    await this.addCapability("current_hour_value");
+    await this.addCapability("cheapest_h0");
+    await this.addCapability("cheapest_h1");
+    await this.addCapability("cheapest_h2");
+    await this.addCapability("cheapest_h0_value");
+    await this.addCapability("cheapest_h1_value");
+    await this.addCapability("cheapest_h2_value");
 
     // await this.updatePrices();
   }
@@ -71,6 +78,8 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       },
     };
 
+    // this.log("Params", url);
+
     return new Promise((resolve, reject) => {
       const req = https.request(url, options, (res) => {
         let data = "";
@@ -82,8 +91,8 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
         res.on("end", () => {
           try {
             const jsonData = JSON.parse(data);
-            this.log(options);
-            this.log(jsonData);
+            // this.log(options);
+            // this.log(jsonData);
             resolve(jsonData);
           } catch (error) {
             reject(new Error("Failed to parse response data"));
@@ -101,7 +110,7 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
 
   async updatePrices() {
     try {
-      this.log(this.settings);
+      // this.log(this.settings);
       var apiKey = this.settings["apiKey"];
       if (!apiKey) {
         this.log("API key not set in device");
@@ -109,20 +118,56 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       }
 
       // Get prices for next 24 hours and cheapest times
-      const { currentPrice, cheapestHours } =
-        await this.getCurrentPrice(apiKey);
+      const {
+        currentPrice,
+        currentPriceHour,
+        cheapestHours,
+        cheapestHoursValues,
+      } = await this.getCurrentPrice(apiKey);
 
-      await this.setCapabilityValue("meter_price", currentPrice);
+      await this.setCapabilityValue("current_hour_price", currentPrice);
+      await this.setCapabilityValue("current_hour_value", currentPriceHour);
 
-      // Set cheapest hours with fallbacks
-      [0, 1, 2].forEach((index) => {
-        const value = cheapestHours[index] || this.homey.__("errors.na");
-        this.setCapabilityValue(`cheapest_h${index}`, value);
-      });
+      this.log(
+        currentPrice,
+        currentPriceHour,
+        cheapestHours,
+        cheapestHoursValues,
+      );
 
+      // [
+      //   // Set cheapest hours with fallbacks
+      //   (0, 1, 2),
+      // ].forEach((index) => {
+      //   const hour = cheapestHours[index] || this.homey.__("errors.na");
+      //   this.log(hour);
+      //   this.setCapabilityValue(`cheapest_h${index}`, hour);
+      //   const value = cheapestHoursValues[index] || this.homey.__("errors.na");
+      //   this.log(value);
+      //   this.log(index);
+      //   this.setCapabilityValue(`cheapest_h${index}_value`, value);
+      // });
+
+      await this.setCapabilityValue("cheapest_h0", cheapestHours[0]);
+      await this.setCapabilityValue(
+        "cheapest_h0_value",
+        cheapestHoursValues[0],
+      );
+
+      await this.setCapabilityValue("cheapest_h1", cheapestHours[1]);
+      await this.setCapabilityValue(
+        "cheapest_h1_value",
+        cheapestHoursValues[1],
+      );
+
+      await this.setCapabilityValue("cheapest_h2", cheapestHours[2]);
+      await this.setCapabilityValue(
+        "cheapest_h2_value",
+        cheapestHoursValues[2],
+      );
       // Get historical prices (last 7 days)
-      const historicalData = await this.getHistoricalPrices(apiKey);
-      this.log("Historical data updated");
+      // const historicalData = await this.getHistoricalPrices(apiKey);
+      // this.log("Historical data updated");
     } catch (error) {
       this.error("Error updating prices:", error);
     }
@@ -131,10 +176,16 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
   async getCurrentPrice(apiKey) {
     const now = new Date();
     const windowStart = new Date();
-    windowStart.setUTCHours(0, 0, 0, 0); // Start of current day in UTC
+    if (windowStart.getUTCHours() === 0) {
+      windowStart.setUTCDate(windowStart.getUTCDate() - 1);
+      windowStart.setUTCHours(23, 0, 0, 0); // Set to 23:00 of the previous day
+    } else {
+      windowStart.setUTCHours(windowStart.getUTCHours() - 1, 0, 0, 0); // Rewind to one hour earlier than now in UTC
+    }
 
     const windowEnd = new Date(windowStart);
-    windowEnd.setDate(windowStart.getDate() + 1); // Add 24 hours
+    windowEnd.setDate(windowStart.getUTCDate() + 1); // Add 24 hours
+    windowEnd.setUTCHours(23, 0, 0, 0);
 
     const response = await this.apiRequest(
       "/integrations/pricing/",
@@ -159,37 +210,58 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
 
     // Format to local time (HH:mm)
     const cheapestHours = cheapestFrames.map((frame) => {
-      return new Date(frame.start).toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-      });
+      return new Date(frame.start)
+        .toLocaleString([], {
+          timezone: this.homey.clock.getTimezone(),
+          hour: "2-digit",
+          minute: "2-digit",
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hourCycle: "h23",
+        })
+        .replace(",", "");
+    });
+
+    const cheapestHoursValues = cheapestFrames.map((frame) => {
+      return frame.price_gross;
     });
 
     return {
       currentPrice: currentFrame?.price_gross || 0,
+      currentPriceHour:
+        new Date(currentFrame?.start).toLocaleString([], {
+          timezone: this.homey.clock.getTimezone(),
+          hour: "2-digit",
+          minute: "2-digit",
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hourCycle: "h23",
+        }) || "",
       cheapestHours,
+      cheapestHoursValues,
     };
   }
 
-  async getHistoricalPrices(apiKey) {
-    const now = new Date();
-    const windowStart = new Date(now);
-    windowStart.setDate(now.getDate() - 7);
+  // async getHistoricalPrices(apiKey) {
+  //   const now = new Date();
+  //   const windowStart = new Date(now);
+  //   windowStart.setDate(now.getDate() - 7);
 
-    const response = await this.apiRequest(
-      "/integrations/pricing/",
-      {
-        resolution: "day",
-        window_start: windowStart.toISOString(),
-        window_end: now.toISOString(),
-      },
-      apiKey,
-    );
+  //   const response = await this.apiRequest(
+  //     "/integrations/pricing/",
+  //     {
+  //       resolution: "day",
+  //       window_start: windowStart.toISOString(),
+  //       window_end: now.toISOString(),
+  //     },
+  //     apiKey,
+  //   );
 
-    return response.frames.map((frame) => ({
-      timestamp: new Date(frame.start).getTime(),
-      price: frame.price_gross_avg,
-    }));
-  }
+  //   return response.frames.map((frame) => ({
+  //     timestamp: new Date(frame.start).getTime(),
+  //     price: frame.price_gross_avg,
+  //   }));
+  // }
 };

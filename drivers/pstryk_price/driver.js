@@ -9,19 +9,29 @@ module.exports = class PstrykPriceDriver extends Homey.Driver {
   async onInit() {
     this.log("Pstryk price driver has been initialized");
 
-    this._updatePricesInterval = setInterval(
-      () => {
-        // Regular hourly update
+    this._lastCheckHour = null;
+
+    this._hourlyCheckInterval = setInterval(() => {
+      const now = new Date();
+      const seconds = now.getSeconds();
+      const minutes = now.getMinutes();
+
+      // If we're at 15 seconds past the hour (00:15, 01:15, etc.)
+      if (minutes === 0 && seconds >= 15) {
+        if (this._lastCheckHour === now.getHours()) {
+          return;
+        }
+        this.log("Hour changed, updating prices");
         this.updatePrices();
-      },
-      30 * 60 * 1000,
-    );
+        this._lastCheckHour = now.getHours();
+      }
+    }, 5000); // Check every 5 seconds
 
     // Initial update
-    this.updatePrices();
+    setTimeout(this.updatePrices.bind(this), 2000);
   }
 
-  async updatePrices() {
+  async updatePrices(retryCount = 0) {
     this.log("Trying to update prices");
     try {
       const devices = this.getDevices();
@@ -30,6 +40,21 @@ module.exports = class PstrykPriceDriver extends Homey.Driver {
       }
     } catch (error) {
       this.error("Error updating prices:", error);
+
+      // Retry logic - maximum 3 retries with exponential backoff
+      if (retryCount < 3) {
+        const retryDelay = 5000 * Math.pow(2, retryCount); // 5s, 10s, 20s
+        this.log(
+          `Scheduling retry #${retryCount + 1} in ${retryDelay / 1000} seconds`,
+        );
+
+        setTimeout(() => {
+          this.log(`Retrying update prices (attempt ${retryCount + 1})`);
+          this.updatePrices(retryCount + 1);
+        }, retryDelay);
+      } else {
+        this.error("Max retries reached, giving up with updatePrices");
+      }
     }
   }
 
@@ -41,7 +66,7 @@ module.exports = class PstrykPriceDriver extends Homey.Driver {
   async onPairListDevices() {
     return [
       {
-        name: "PSTRYK API",
+        name: "PSTRYK Prices",
         data: {
           id: "pstryk-api",
         },

@@ -1,0 +1,124 @@
+{
+    "triggers": [
+        {
+            "id": "current_hour_price_changed",
+            "title": { "en": "Current price changed" },
+            "tokens": [
+                {
+                    "name": "value",
+                    "title": {
+                        "en": "PLN/kWh"
+                    },
+                    "example": {
+                        "en": "0.505"
+                    }
+                }
+            ]
+        },
+        {
+            "id": "cheapest_h0_value_changed",
+            "title": { "en": "Cheapest price value changed" },
+            "tokens": [
+                {
+                    "name": "value",
+                    "title": {
+                        "en": "PLN/kWh"
+                    },
+                    "example": {
+                        "en": "0.505"
+                    }
+                }
+            ]
+        },
+        {
+            "id": "cheapest_h2_value_changed",
+            "title": { "en": "3rd cheapest price value changed" },
+            "tokens": [
+                {
+                    "name": "value",
+                    "title": {
+                        "en": "PLN/kWh"
+                    },
+                    "example": {
+                        "en": "0.505"
+                    }
+                }
+            ]
+        },
+        {
+            "id": "cheapest_h1_value_changed",
+            "title": { "en": "2nd cheapest price value changed" },
+            "tokens": [
+                {
+                    "name": "value",
+                    "title": {
+                        "en": "PLN/kWh"
+                    },
+                    "example": {
+                        "en": "0.505"
+                    }
+                }
+            ]
+        },
+        {
+            "id": "cheapest_h1_changed",
+            "title": { "en": "2nd next cheapest hour changed" },
+            "tokens": [
+                {
+                    "name": "value",
+                    "title": {
+                        "en": "hour"
+                    },
+                    "example": {
+                        "en": "2020-01-01T00:00:00Z"
+                    }
+                }
+            ]
+        },
+        {
+            "id": "cheapest_h2_changed",
+            "title": { "en": "3rd next cheapest hour changed" },
+            "tokens": [
+                {
+                    "name": "value",
+                    "title": {
+                        "en": "hour"
+                    },
+                    "example": {
+                        "en": "2020-01-01T00:00:00Z"
+                    }
+                }
+            ]
+        },
+        {
+            "id": "cheapest_h0_changed",
+            "title": { "en": "Cheapest hour changed" },
+            "tokens": [
+                {
+                    "name": "value",
+                    "title": {
+                        "en": "hour"
+                    },
+                    "example": {
+                        "en": "2020-01-01T00:00:00Z"
+                    }
+                }
+            ]
+        },
+        {
+            "id": "current_hour_value_changed",
+            "title": { "en": "Current price value changed" },
+            "tokens": [
+                {
+                    "name": "value",
+                    "title": {
+                        "en": "hour"
+                    },
+                    "example": {
+                        "en": "2020-01-01T00:00:00Z"
+                    }
+                }
+            ]
+        }
+    ]
+}
