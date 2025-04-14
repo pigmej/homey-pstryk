@@ -1,12 +1,22 @@
 {
     "title": {
-        "en": "Cheapest price value"
+        "en": "Next cheapest price value"
     },
     "desc": {
-        "en": "Cheapest electricity price value"
+        "en": "Next cheapest electricity price value"
     },
+    "tokens": [
+        {
+            "name": "value",
+            "type": "number",
+            "title": {
+                "en": "PLN/kWh"
+            },
+            "example": 0.505
+        }
+    ],
     "type": "number",
-    "min": 0,
+    "min": -5,
     "max": 5,
     "decimals": 4,
     "units": {

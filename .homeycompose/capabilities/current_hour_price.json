@@ -5,8 +5,18 @@
     "desc": {
         "en": "Current electricity price"
     },
+    "tokens": [
+        {
+            "name": "value",
+            "type": "number",
+            "title": {
+                "en": "PLN/kWh"
+            },
+            "example": 0.505
+        }
+    ],
     "type": "number",
-    "min": 0,
+    "min": -5,
     "max": 5,
     "decimals": 4,
     "units": {

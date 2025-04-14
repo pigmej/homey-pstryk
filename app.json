@@ -31,11 +31,179 @@
         "tokens": [
           {
             "name": "value",
+            "type": "number",
             "title": {
               "en": "PLN/kWh"
             },
+            "example": 0.505
+          }
+        ],
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=pstryk_price"
+          }
+        ]
+      },
+      {
+        "id": "cheapest_h0_value_changed",
+        "title": {
+          "en": "Cheapest price value changed"
+        },
+        "tokens": [
+          {
+            "name": "value",
+            "type": "number",
+            "title": {
+              "en": "PLN/kWh"
+            },
+            "example": 0.505
+          }
+        ],
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=pstryk_price"
+          }
+        ]
+      },
+      {
+        "id": "cheapest_h2_value_changed",
+        "title": {
+          "en": "3rd cheapest price value changed"
+        },
+        "tokens": [
+          {
+            "name": "value",
+            "type": "number",
+            "title": {
+              "en": "PLN/kWh"
+            },
+            "example": 0.505
+          }
+        ],
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=pstryk_price"
+          }
+        ]
+      },
+      {
+        "id": "cheapest_h1_value_changed",
+        "title": {
+          "en": "2nd cheapest price value changed"
+        },
+        "tokens": [
+          {
+            "name": "value",
+            "type": "number",
+            "title": {
+              "en": "PLN/kWh"
+            },
+            "example": 0.505
+          }
+        ],
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=pstryk_price"
+          }
+        ]
+      },
+      {
+        "id": "cheapest_h1_changed",
+        "title": {
+          "en": "2nd next cheapest hour changed"
+        },
+        "tokens": [
+          {
+            "name": "value",
+            "type": "string",
+            "title": {
+              "en": "hour"
+            },
             "example": {
-              "en": "0.505"
+              "en": "2020-01-01T00:00:00Z"
+            }
+          }
+        ],
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=pstryk_price"
+          }
+        ]
+      },
+      {
+        "id": "cheapest_h2_changed",
+        "title": {
+          "en": "3rd next cheapest hour changed"
+        },
+        "tokens": [
+          {
+            "name": "value",
+            "type": "string",
+            "title": {
+              "en": "hour"
+            },
+            "example": {
+              "en": "2020-01-01T00:00:00Z"
+            }
+          }
+        ],
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=pstryk_price"
+          }
+        ]
+      },
+      {
+        "id": "cheapest_h0_changed",
+        "title": {
+          "en": "Cheapest hour changed"
+        },
+        "tokens": [
+          {
+            "name": "value",
+            "type": "string",
+            "title": {
+              "en": "hour"
+            },
+            "example": {
+              "en": "2020-01-01T00:00:00Z"
+            }
+          }
+        ],
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=pstryk_price"
+          }
+        ]
+      },
+      {
+        "id": "current_hour_value_changed",
+        "title": {
+          "en": "Current price value changed"
+        },
+        "tokens": [
+          {
+            "name": "value",
+            "type": "string",
+            "title": {
+              "en": "hour"
+            },
+            "example": {
+              "en": "2020-01-01T00:00:00Z"
             }
           }
         ],
@@ -111,17 +279,39 @@
       "desc": {
         "en": "next chaepest hour starts at"
       },
+      "tokens": [
+        {
+          "name": "value",
+          "type": "string",
+          "title": {
+            "en": "h"
+          },
+          "example": {
+            "en": "03/27/2025 01:00"
+          }
+        }
+      ],
       "type": "string",
       "getable": true,
       "setable": false
     },
     "cheapest_h0_value": {
       "title": {
-        "en": "Cheapest price value"
+        "en": "Next cheapest price value"
       },
       "desc": {
-        "en": "Cheapest electricity price value"
+        "en": "Next cheapest electricity price value"
       },
+      "tokens": [
+        {
+          "name": "value",
+          "type": "number",
+          "title": {
+            "en": "PLN/kWh"
+          },
+          "example": 0.505
+        }
+      ],
       "type": "number",
       "min": 0,
       "max": 5,
@@ -140,6 +330,18 @@
       "desc": {
         "en": "2nd next chaepest hour starts at"
       },
+      "tokens": [
+        {
+          "name": "value",
+          "type": "string",
+          "title": {
+            "en": "h"
+          },
+          "example": {
+            "en": "03/27/2025 01:00"
+          }
+        }
+      ],
       "type": "string",
       "getable": true,
       "setable": false
@@ -151,6 +353,16 @@
       "desc": {
         "en": "2nd cheapest electricity price value"
       },
+      "tokens": [
+        {
+          "name": "value",
+          "type": "number",
+          "title": {
+            "en": "PLN/kWh"
+          },
+          "example": 0.505
+        }
+      ],
       "type": "number",
       "min": 0,
       "max": 5,
@@ -169,6 +381,18 @@
       "desc": {
         "en": "3rd next chaepest hour starts at"
       },
+      "tokens": [
+        {
+          "name": "value",
+          "type": "string",
+          "title": {
+            "en": "h"
+          },
+          "example": {
+            "en": "03/27/2025 01:00"
+          }
+        }
+      ],
       "type": "string",
       "getable": true,
       "setable": false
@@ -180,6 +404,16 @@
       "desc": {
         "en": "3rd cheapest price value"
       },
+      "tokens": [
+        {
+          "name": "value",
+          "type": "number",
+          "title": {
+            "en": "PLN/kWh"
+          },
+          "example": 0.505
+        }
+      ],
       "type": "number",
       "min": 0,
       "max": 5,
@@ -198,6 +432,16 @@
       "desc": {
         "en": "Current electricity price"
       },
+      "tokens": [
+        {
+          "name": "value",
+          "type": "number",
+          "title": {
+            "en": "PLN/kWh"
+          },
+          "example": 0.505
+        }
+      ],
       "type": "number",
       "min": 0,
       "max": 5,
@@ -216,6 +460,18 @@
       "desc": {
         "en": "current hour value, use this to cross check that everything works as expected"
       },
+      "tokens": [
+        {
+          "name": "value",
+          "type": "string",
+          "title": {
+            "en": "h"
+          },
+          "example": {
+            "en": "03/27/2025 01:00"
+          }
+        }
+      ],
       "type": "string",
       "getable": true,
       "setable": false

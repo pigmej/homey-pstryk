@@ -91,8 +91,8 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
         res.on("end", () => {
           try {
             const jsonData = JSON.parse(data);
-            // this.log(options);
-            // this.log(jsonData);
+            this.log(options);
+            this.log(jsonData);
             resolve(jsonData);
           } catch (error) {
             reject(new Error("Failed to parse response data"));
@@ -197,8 +197,30 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       apiKey,
     );
 
-    const currentFrame = response.frames.find((frame) => frame.is_live);
-    const futureFrames = response.frames.filter(
+    // Filter out frames where is_cheap or is_expensive is null
+
+    const validFrames = response.frames.filter((frame) => {
+      if (frame.is_cheap === null || frame.is_expensive === null) {
+        this.log("Filtered out invalid frame:", frame);
+        return false;
+      }
+      return true;
+    });
+
+    // Get cheapest hours sorted by price from valid frames
+    const validCheapestFrames = [...validFrames]
+      .sort((a, b) => a.price_gross - b.price_gross)
+      .slice(0, 3);
+
+    // Update cheapest hours if valid data is available
+    if (validCheapestFrames.length > 0) {
+      this.log(`Found ${validCheapestFrames.length} valid cheapest frames`);
+    } else {
+      this.error("No valid frames found for cheapest hours");
+    }
+
+    const currentFrame = validFrames.find((frame) => frame.is_live);
+    const futureFrames = validFrames.filter(
       (frame) =>
         new Date(frame.start) > now && new Date(frame.start) <= windowEnd,
     );
@@ -212,7 +234,7 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
     const cheapestHours = cheapestFrames.map((frame) => {
       return new Date(frame.start)
         .toLocaleString([], {
-          timezone: this.homey.clock.getTimezone(),
+          timeZone: this.homey.clock.getTimezone(),
           hour: "2-digit",
           minute: "2-digit",
           day: "2-digit",
@@ -231,7 +253,7 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       currentPrice: currentFrame?.price_gross || 0,
       currentPriceHour:
         new Date(currentFrame?.start).toLocaleString([], {
-          timezone: this.homey.clock.getTimezone(),
+          timeZone: this.homey.clock.getTimezone(),
           hour: "2-digit",
           minute: "2-digit",
           day: "2-digit",

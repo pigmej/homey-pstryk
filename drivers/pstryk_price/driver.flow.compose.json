@@ -6,12 +6,11 @@
             "tokens": [
                 {
                     "name": "value",
+                    "type": "number",
                     "title": {
                         "en": "PLN/kWh"
                     },
-                    "example": {
-                        "en": "0.505"
-                    }
+                    "example": 0.505
                 }
             ]
         },
@@ -21,12 +20,11 @@
             "tokens": [
                 {
                     "name": "value",
+                    "type": "number",
                     "title": {
                         "en": "PLN/kWh"
                     },
-                    "example": {
-                        "en": "0.505"
-                    }
+                    "example": 0.505
                 }
             ]
         },
@@ -36,12 +34,11 @@
             "tokens": [
                 {
                     "name": "value",
+                    "type": "number",
                     "title": {
                         "en": "PLN/kWh"
                     },
-                    "example": {
-                        "en": "0.505"
-                    }
+                    "example": 0.505
                 }
             ]
         },
@@ -51,12 +48,11 @@
             "tokens": [
                 {
                     "name": "value",
+                    "type": "number",
                     "title": {
                         "en": "PLN/kWh"
                     },
-                    "example": {
-                        "en": "0.505"
-                    }
+                    "example": 0.505
                 }
             ]
         },
@@ -66,6 +62,7 @@
             "tokens": [
                 {
                     "name": "value",
+                    "type": "string",
                     "title": {
                         "en": "hour"
                     },
@@ -81,6 +78,7 @@
             "tokens": [
                 {
                     "name": "value",
+                    "type": "string",
                     "title": {
                         "en": "hour"
                     },
@@ -96,6 +94,7 @@
             "tokens": [
                 {
                     "name": "value",
+                    "type": "string",
                     "title": {
                         "en": "hour"
                     },
@@ -111,6 +110,7 @@
             "tokens": [
                 {
                     "name": "value",
+                    "type": "string",
                     "title": {
                         "en": "hour"
                     },
