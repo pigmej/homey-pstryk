@@ -13,6 +13,8 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
 
     await this.addCapability("current_hour_price");
     await this.addCapability("current_hour_value");
+    await this.addCapability("currently_cheap");
+    await this.addCapability("currently_expensive");
     await this.addCapability("cheapest_h0");
     await this.addCapability("cheapest_h1");
     await this.addCapability("cheapest_h2");
@@ -118,22 +120,27 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       }
 
       // Get prices for next 24 hours and cheapest times
-      const {
-        currentPrice,
-        currentPriceHour,
-        cheapestHours,
-        cheapestHoursValues,
-      } = await this.getCurrentPrice(apiKey);
+      const { currentPriceInfo, cheapestHours, cheapestHoursValues } =
+        await this.getCurrentPrice(apiKey);
 
-      await this.setCapabilityValue("current_hour_price", currentPrice);
-      await this.setCapabilityValue("current_hour_value", currentPriceHour);
-
-      this.log(
-        currentPrice,
-        currentPriceHour,
-        cheapestHours,
-        cheapestHoursValues,
+      await this.setCapabilityValue(
+        "current_hour_price",
+        currentPriceInfo.price,
       );
+      await this.setCapabilityValue(
+        "current_hour_value",
+        currentPriceInfo.hour,
+      );
+      await this.setCapabilityValue(
+        "currently_cheap",
+        currentPriceInfo.is_cheap,
+      );
+      await this.setCapabilityValue(
+        "currently_expensive",
+        currentPriceInfo.is_expensive,
+      );
+
+      this.log(currentPriceInfo, cheapestHours, cheapestHoursValues);
 
       // [
       //   // Set cheapest hours with fallbacks
@@ -198,7 +205,6 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
     );
 
     // Filter out frames where is_cheap or is_expensive is null
-
     const validFrames = response.frames.filter((frame) => {
       if (frame.is_cheap === null || frame.is_expensive === null) {
         this.log("Filtered out invalid frame:", frame);
@@ -249,9 +255,10 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       return frame.price_gross;
     });
 
-    return {
-      currentPrice: currentFrame?.price_gross || 0,
-      currentPriceHour:
+    // Create a structured object for current price information
+    const currentPriceInfo = {
+      price: currentFrame?.price_gross || 0,
+      hour:
         new Date(currentFrame?.start).toLocaleString([], {
           timeZone: this.homey.clock.getTimezone(),
           hour: "2-digit",
@@ -261,6 +268,13 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
           year: "numeric",
           hourCycle: "h23",
         }) || "",
+      is_cheap: currentFrame?.is_cheap || false,
+      is_expensive: currentFrame?.is_expensive || false,
+      frame: currentFrame || null,
+    };
+
+    return {
+      currentPriceInfo,
       cheapestHours,
       cheapestHoursValues,
     };

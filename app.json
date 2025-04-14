@@ -214,6 +214,52 @@
             "filter": "driver_id=pstryk_price"
           }
         ]
+      },
+      {
+        "id": "currently_cheap_changed",
+        "title": {
+          "en": "Currently cheap changed"
+        },
+        "tokens": [
+          {
+            "name": "currently_cheap_changed",
+            "type": "boolean",
+            "title": {
+              "en": "Is currently cheap"
+            },
+            "example": true
+          }
+        ],
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=pstryk_price"
+          }
+        ]
+      },
+      {
+        "id": "currently_expensive_changed",
+        "title": {
+          "en": "Currently expensive changed"
+        },
+        "tokens": [
+          {
+            "name": "currently_expensive_changed",
+            "type": "boolean",
+            "title": {
+              "en": "Is currently expensive"
+            },
+            "example": true
+          }
+        ],
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=pstryk_price"
+          }
+        ]
       }
     ]
   },
@@ -476,6 +522,52 @@
       "type": "string",
       "getable": true,
       "setable": false
+    },
+    "currently_cheap": {
+      "title": {
+        "en": "Is current price cheap"
+      },
+      "desc": {
+        "en": "Is the current price cheap or no"
+      },
+      "tokens": [
+        {
+          "name": "currently_cheap",
+          "type": "boolean",
+          "title": {
+            "en": "Cheap?"
+          },
+          "example": true
+        }
+      ],
+      "type": "boolean",
+      "getable": true,
+      "setable": false,
+      "insigts": true,
+      "icon": "/assets/cheap.svg"
+    },
+    "currently_expensive": {
+      "title": {
+        "en": "Is current price expensive"
+      },
+      "desc": {
+        "en": "Is the current price expensive or no"
+      },
+      "tokens": [
+        {
+          "name": "currently_expensive",
+          "type": "boolean",
+          "title": {
+            "en": "Expensive?"
+          },
+          "example": true
+        }
+      ],
+      "type": "boolean",
+      "getable": true,
+      "setable": false,
+      "insigts": true,
+      "icon": "/assets/expensive.svg"
     }
   }
 }

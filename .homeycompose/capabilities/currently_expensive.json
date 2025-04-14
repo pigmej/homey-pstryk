@@ -1,0 +1,23 @@
+{
+    "title": {
+        "en": "Is current price expensive"
+    },
+    "desc": {
+        "en": "Is the current price expensive or no"
+    },
+    "tokens": [
+        {
+            "name": "currently_expensive",
+            "type": "boolean",
+            "title": {
+                "en": "Expensive?"
+            },
+            "example": true
+        }
+    ],
+    "type": "boolean",
+    "getable": true,
+    "setable": false,
+    "insigts": true,
+    "icon": "/assets/expensive.svg"
+}

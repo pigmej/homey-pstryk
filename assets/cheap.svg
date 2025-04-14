@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24">
+  <g>
+    <!-- Lightning Bolt -->
+    <path fill="#4CAF50" d="M8 2L2.5 13h4.5l-1.5 9L13.5 11H9L8 2z"/>
+    <!-- Downward Arrow -->
+    <path fill="#4CAF50" d="M20 16l-4 4-4-4h8z"/>
+  </g>
+</svg>

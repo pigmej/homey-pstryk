@@ -119,6 +119,34 @@
                     }
                 }
             ]
+        },
+        {
+            "id": "currently_cheap_changed",
+            "title": { "en": "Currently cheap changed" },
+            "tokens": [
+                {
+                    "name": "currently_cheap_changed",
+                    "type": "boolean",
+                    "title": {
+                        "en": "Is currently cheap"
+                    },
+                    "example": true
+                }
+            ]
+        },
+        {
+            "id": "currently_expensive_changed",
+            "title": { "en": "Currently expensive changed" },
+            "tokens": [
+                {
+                    "name": "currently_expensive_changed",
+                    "type": "boolean",
+                    "title": {
+                        "en": "Is currently expensive"
+                    },
+                    "example": true
+                }
+            ]
         }
     ]
 }

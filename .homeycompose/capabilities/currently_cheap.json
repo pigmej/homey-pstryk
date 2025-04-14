@@ -1,0 +1,23 @@
+{
+    "title": {
+        "en": "Is current price cheap"
+    },
+    "desc": {
+        "en": "Is the current price cheap or no"
+    },
+    "tokens": [
+        {
+            "name": "currently_cheap",
+            "type": "boolean",
+            "title": {
+                "en": "Cheap?"
+            },
+            "example": true
+        }
+    ],
+    "type": "boolean",
+    "getable": true,
+    "setable": false,
+    "insigts": true,
+    "icon": "/assets/cheap.svg"
+}
