@@ -7,7 +7,7 @@
     },
     "tokens": [
         {
-            "name": "value",
+            "name": "current_hour_price",
             "type": "number",
             "title": {
                 "en": "PLN/kWh"
@@ -15,6 +15,7 @@
             "example": 0.505
         }
     ],
+    "insights": true,
     "type": "number",
     "min": -5,
     "max": 5,

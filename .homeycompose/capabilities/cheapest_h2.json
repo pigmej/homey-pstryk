@@ -7,7 +7,7 @@
     },
     "tokens": [
         {
-            "name": "value",
+            "name": "cheapest_h2",
             "type": "string",
             "title": {
                 "en": "h"

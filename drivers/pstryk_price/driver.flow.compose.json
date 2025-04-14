@@ -5,12 +5,28 @@
             "title": { "en": "Current price changed" },
             "tokens": [
                 {
-                    "name": "value",
+                    "name": "current_hour_price",
                     "type": "number",
                     "title": {
                         "en": "PLN/kWh"
                     },
                     "example": 0.505
+                }
+            ]
+        },
+        {
+            "id": "current_hour_value_changed",
+            "title": { "en": "Current price value changed" },
+            "tokens": [
+                {
+                    "name": "current_hour_value",
+                    "type": "string",
+                    "title": {
+                        "en": "hour"
+                    },
+                    "example": {
+                        "en": "2020-01-01T00:00:00Z"
+                    }
                 }
             ]
         },
@@ -19,21 +35,7 @@
             "title": { "en": "Cheapest price value changed" },
             "tokens": [
                 {
-                    "name": "value",
-                    "type": "number",
-                    "title": {
-                        "en": "PLN/kWh"
-                    },
-                    "example": 0.505
-                }
-            ]
-        },
-        {
-            "id": "cheapest_h2_value_changed",
-            "title": { "en": "3rd cheapest price value changed" },
-            "tokens": [
-                {
-                    "name": "value",
+                    "name": "cheapest_h0_value",
                     "type": "number",
                     "title": {
                         "en": "PLN/kWh"
@@ -47,7 +49,7 @@
             "title": { "en": "2nd cheapest price value changed" },
             "tokens": [
                 {
-                    "name": "value",
+                    "name": "cheapest_h1_value",
                     "type": "number",
                     "title": {
                         "en": "PLN/kWh"
@@ -57,11 +59,41 @@
             ]
         },
         {
+            "id": "cheapest_h2_value_changed",
+            "title": { "en": "3rd cheapest price value changed" },
+            "tokens": [
+                {
+                    "name": "cheapest_h2_valu",
+                    "type": "number",
+                    "title": {
+                        "en": "PLN/kWh"
+                    },
+                    "example": 0.505
+                }
+            ]
+        },
+        {
+            "id": "cheapest_h0_changed",
+            "title": { "en": "Cheapest hour changed" },
+            "tokens": [
+                {
+                    "name": "cheapest_h0",
+                    "type": "string",
+                    "title": {
+                        "en": "hour"
+                    },
+                    "example": {
+                        "en": "2020-01-01T00:00:00Z"
+                    }
+                }
+            ]
+        },
+        {
             "id": "cheapest_h1_changed",
             "title": { "en": "2nd next cheapest hour changed" },
             "tokens": [
                 {
-                    "name": "value",
+                    "name": "cheapest_h1",
                     "type": "string",
                     "title": {
                         "en": "hour"
@@ -77,39 +109,7 @@
             "title": { "en": "3rd next cheapest hour changed" },
             "tokens": [
                 {
-                    "name": "value",
-                    "type": "string",
-                    "title": {
-                        "en": "hour"
-                    },
-                    "example": {
-                        "en": "2020-01-01T00:00:00Z"
-                    }
-                }
-            ]
-        },
-        {
-            "id": "cheapest_h0_changed",
-            "title": { "en": "Cheapest hour changed" },
-            "tokens": [
-                {
-                    "name": "value",
-                    "type": "string",
-                    "title": {
-                        "en": "hour"
-                    },
-                    "example": {
-                        "en": "2020-01-01T00:00:00Z"
-                    }
-                }
-            ]
-        },
-        {
-            "id": "current_hour_value_changed",
-            "title": { "en": "Current price value changed" },
-            "tokens": [
-                {
-                    "name": "value",
+                    "name": "cheapest_h2",
                     "type": "string",
                     "title": {
                         "en": "hour"

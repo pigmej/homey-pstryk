@@ -7,7 +7,7 @@
     },
     "tokens": [
         {
-            "name": "value",
+            "name": "current_hour_value",
             "type": "string",
             "title": {
                 "en": "h"

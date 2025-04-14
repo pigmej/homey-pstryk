@@ -7,7 +7,7 @@
     },
     "tokens": [
         {
-            "name": "value",
+            "name": "cheapest_h2_value",
             "type": "number",
             "title": {
                 "en": "PLN/kWh"
