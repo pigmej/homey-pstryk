@@ -273,11 +273,211 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       frame: currentFrame || null,
     };
 
+    // Find optimal 2+ hour periods for limiting and maximizing electricity usage
+    this.findOptimalPeriods(validFrames);
+
     return {
       currentPriceInfo,
       cheapestHours,
       cheapestHoursValues,
     };
+  }
+
+  /**
+   * Find optimal periods (2-3 hours long) for limiting and maximizing electricity usage
+   * @param {Array} frames - The price frames from the API
+   */
+  findOptimalPeriods(frames) {
+    // Only consider future frames within the next 24 hours
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setHours(now.getHours() + 24);
+    
+    const futureFrames = frames.filter(frame => {
+      const frameStart = new Date(frame.start);
+      return frameStart > now && frameStart < tomorrow;
+    });
+    
+    if (futureFrames.length < 2) {
+      this.log("Not enough future frames to find optimal periods");
+      return;
+    }
+    
+    // Sort frames by time to ensure they're in chronological order
+    const sortedFrames = [...futureFrames].sort(
+      (a, b) => new Date(a.start) - new Date(b.start)
+    );
+    
+    // Create blocks of 2 and 3 hours only
+    const allBlocks = [];
+    
+    // Create blocks of 2 and 3 hours
+    for (let blockSize = 2; blockSize <= 3; blockSize++) {
+      for (let i = 0; i <= sortedFrames.length - blockSize; i++) {
+        const block = sortedFrames.slice(i, i + blockSize);
+        const startTime = new Date(block[0].start);
+        const endTime = new Date(block[block.length - 1].end);
+        
+        // Verify this is actually the correct duration block
+        const durationMs = endTime - startTime;
+        const durationHours = durationMs / (1000 * 60 * 60);
+        
+        // Allow small tolerance for each block size
+        const expectedHours = blockSize;
+        if (durationHours >= expectedHours - 0.1 && durationHours <= expectedHours + 0.1) {
+          const avgPrice = block.reduce((sum, frame) => sum + frame.price_gross, 0) / block.length;
+          
+          allBlocks.push({
+            startTime,
+            endTime,
+            durationHours: block.length,
+            avgPrice,
+            frames: block
+          });
+        }
+      }
+    }
+    
+    if (allBlocks.length === 0) {
+      this.log("No valid blocks found for analysis");
+      return;
+    }
+    
+    // Debug info
+    this.log(`Found ${allBlocks.length} blocks of 2-3 hours length`);
+    
+    // Function to find the best non-overlapping blocks
+    const findBestBlocks = (blocks, byPrice, maxBlocks = 2) => {
+      // Sort blocks by price (ascending for cheap, descending for expensive)
+      const sortedBlocks = [...blocks].sort((a, b) => 
+        byPrice === 'cheap' ? a.avgPrice - b.avgPrice : b.avgPrice - a.avgPrice
+      );
+      
+      const selectedBlocks = [];
+      
+      // Select the best blocks that don't overlap
+      for (const block of sortedBlocks) {
+        // Check if this block overlaps with any already selected block
+        const overlaps = selectedBlocks.some(selectedBlock => {
+          return (block.startTime < selectedBlock.endTime && block.endTime > selectedBlock.startTime);
+        });
+        
+        if (!overlaps) {
+          selectedBlocks.push(block);
+          if (selectedBlocks.length >= maxBlocks) break;
+        }
+      }
+      
+      // Check for consecutive hours with similar prices to extend blocks
+      const extendedBlocks = [];
+      
+      for (const block of selectedBlocks) {
+        let extendedBlock = {...block};
+        const blockEndTime = new Date(block.endTime);
+        
+        // Look for frames that come right after this block with similar price
+        const nextFrames = sortedFrames.filter(frame => {
+          const frameStart = new Date(frame.start);
+          // Check if frame starts right after block ends (within 5 minutes tolerance)
+          return Math.abs(frameStart - blockEndTime) < 5 * 60 * 1000;
+        });
+        
+        if (nextFrames.length > 0) {
+          const nextFrame = nextFrames[0];
+          // Check if price is similar (within 10% of average price)
+          const priceDiffPercent = Math.abs(nextFrame.price_gross - block.avgPrice) / block.avgPrice * 100;
+          
+          if (priceDiffPercent <= 10) {
+            // Extend the block with this frame
+            const extendedFrames = [...block.frames, nextFrame];
+            const newEndTime = new Date(nextFrame.end);
+            const newAvgPrice = extendedFrames.reduce((sum, frame) => sum + frame.price_gross, 0) / extendedFrames.length;
+            
+            extendedBlock = {
+              startTime: block.startTime,
+              endTime: newEndTime,
+              durationHours: extendedFrames.length,
+              avgPrice: newAvgPrice,
+              frames: extendedFrames,
+              extended: true
+            };
+          }
+        }
+        
+        extendedBlocks.push(extendedBlock);
+      }
+      
+      return extendedBlocks;
+    };
+    
+    // Get the cheapest blocks
+    const cheapestBlocks = findBestBlocks(allBlocks, 'cheap');
+    
+    // Get the most expensive blocks, excluding frames used in cheap blocks
+    const cheapFrameIds = new Set();
+    cheapestBlocks.forEach(block => {
+      block.frames.forEach(frame => {
+        cheapFrameIds.add(frame.start); // Use start time as unique identifier
+      });
+    });
+    
+    // Filter out blocks that have frames already used in cheap blocks
+    const remainingBlocks = allBlocks.filter(block => {
+      return !block.frames.some(frame => cheapFrameIds.has(frame.start));
+    });
+    
+    const expensiveBlocks = findBestBlocks(remainingBlocks, 'expensive');
+    
+    // Log the results
+    this.log("--- OPTIMAL ELECTRICITY USAGE PERIODS ---");
+    
+    if (cheapestBlocks.length > 0) {
+      this.log("MAXIMIZE USAGE during these cheap periods:");
+      cheapestBlocks.forEach((block, index) => {
+        const formattedStartTime = block.startTime.toLocaleString('en-US', {
+          timeZone: this.homey.clock.getTimezone(),
+          hour: '2-digit',
+          minute: '2-digit',
+          day: '2-digit',
+          month: '2-digit'
+        });
+        const formattedEndTime = block.endTime.toLocaleString('en-US', {
+          timeZone: this.homey.clock.getTimezone(),
+          hour: '2-digit',
+          minute: '2-digit',
+          day: '2-digit',
+          month: '2-digit'
+        });
+        const extendedNote = block.extended ? " (extended due to similar price)" : "";
+        this.log(`Period ${index + 1}: ${formattedStartTime} to ${formattedEndTime} (${block.durationHours} hours)${extendedNote} - Avg price: ${block.avgPrice.toFixed(2)}`);
+      });
+    } else {
+      this.log("No cheap periods found for maximizing usage");
+    }
+    
+    if (expensiveBlocks.length > 0) {
+      this.log("LIMIT USAGE during these expensive periods:");
+      expensiveBlocks.forEach((block, index) => {
+        const formattedStartTime = block.startTime.toLocaleString('en-US', {
+          timeZone: this.homey.clock.getTimezone(),
+          hour: '2-digit',
+          minute: '2-digit',
+          day: '2-digit',
+          month: '2-digit'
+        });
+        const formattedEndTime = block.endTime.toLocaleString('en-US', {
+          timeZone: this.homey.clock.getTimezone(),
+          hour: '2-digit',
+          minute: '2-digit',
+          day: '2-digit',
+          month: '2-digit'
+        });
+        const extendedNote = block.extended ? " (extended due to similar price)" : "";
+        this.log(`Period ${index + 1}: ${formattedStartTime} to ${formattedEndTime} (${block.durationHours} hours)${extendedNote} - Avg price: ${block.avgPrice.toFixed(2)}`);
+      });
+    } else {
+      this.log("No expensive periods found for limiting usage");
+    }
   }
 
   // async getHistoricalPrices(apiKey) {
