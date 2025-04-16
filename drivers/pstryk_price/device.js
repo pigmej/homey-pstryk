@@ -21,6 +21,8 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
     await this.addCapability("cheapest_h0_value");
     await this.addCapability("cheapest_h1_value");
     await this.addCapability("cheapest_h2_value");
+    await this.addCapability("maximise_usage_during");
+    await this.addCapability("minimise_usage_during");
 
     // await this.updatePrices();
   }
@@ -245,7 +247,6 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
           minute: "2-digit",
           day: "2-digit",
           month: "2-digit",
-          year: "numeric",
           hourCycle: "h23",
         })
         .replace(",", "");
@@ -265,7 +266,6 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
           minute: "2-digit",
           day: "2-digit",
           month: "2-digit",
-          year: "numeric",
           hourCycle: "h23",
         }) || "",
       is_cheap: currentFrame?.is_cheap || false,
@@ -274,18 +274,37 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
     };
 
     // Find optimal 2+ hour periods for limiting and maximizing electricity usage
-    this.findOptimalPeriods(validFrames);
+    const { cheapBlocks, expensiveBlocks } =
+      this.findOptimalPeriods(validFrames);
+
+    // Set capability values for optimal periods
+    if (cheapBlocks.length > 0) {
+      await this.setCapabilityValue(
+        "maximise_usage_during",
+        cheapBlocks.map((block) => block.formattedPeriod).join(", "),
+      );
+    }
+
+    if (expensiveBlocks.length > 0) {
+      await this.setCapabilityValue(
+        "minimise_usage_during",
+        expensiveBlocks.map((block) => block.formattedPeriod).join(", "),
+      );
+    }
 
     return {
       currentPriceInfo,
       cheapestHours,
       cheapestHoursValues,
+      cheapBlocks,
+      expensiveBlocks,
     };
   }
 
   /**
    * Find optimal periods for limiting and maximizing electricity usage
    * @param {Array} frames - The price frames from the API
+   * @returns {Object} Object containing cheap and expensive blocks
    */
   findOptimalPeriods(frames) {
     // Only consider future frames within the next 24 hours
@@ -300,7 +319,7 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
 
     if (futureFrames.length === 0) {
       this.log("No future frames available to find optimal periods");
-      return;
+      return { cheapBlocks: [], expensiveBlocks: [] };
     }
 
     // Function to find optimal blocks by processing frames in price order
@@ -401,60 +420,70 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
     // Get most expensive blocks
     const expensiveBlocks = findOptimalBlocks(futureFrames, false);
 
+    // Format blocks for display and return
+    const formatBlocks = (blocks) => {
+      return blocks.map((block, index) => {
+        const formattedStartTime = block.startTime.toLocaleString([], {
+          timeZone: this.homey.clock.getTimezone(),
+          hour: "2-digit",
+          minute: "2-digit",
+          day: "2-digit",
+          month: "2-digit",
+          hourCycle: "h23",
+        });
+
+        const formattedEndTime = block.endTime.toLocaleString([], {
+          timeZone: this.homey.clock.getTimezone(),
+          hour: "2-digit",
+          minute: "2-digit",
+          day: "2-digit",
+          month: "2-digit",
+          hourCycle: "h23",
+        });
+
+        return {
+          ...block,
+          formattedStartTime,
+          formattedEndTime,
+          formattedPeriod: `${formattedStartTime} to ${formattedEndTime}`,
+          periodNumber: index + 1,
+        };
+      });
+    };
+
+    const formattedCheapBlocks = formatBlocks(cheapBlocks);
+    const formattedExpensiveBlocks = formatBlocks(expensiveBlocks);
+
     // Log the results
     this.log("--- OPTIMAL ELECTRICITY USAGE PERIODS ---");
 
-    if (cheapBlocks.length > 0) {
+    if (formattedCheapBlocks.length > 0) {
       this.log("MAXIMIZE USAGE during these cheap periods:");
-      cheapBlocks.forEach((block, index) => {
-        const formattedStartTime = block.startTime.toLocaleString("en-US", {
-          timeZone: this.homey.clock.getTimezone(),
-          hour: "2-digit",
-          minute: "2-digit",
-          day: "2-digit",
-          month: "2-digit",
-        });
-        const formattedEndTime = block.endTime.toLocaleString("en-US", {
-          timeZone: this.homey.clock.getTimezone(),
-          hour: "2-digit",
-          minute: "2-digit",
-          day: "2-digit",
-          month: "2-digit",
-        });
-        const extendedNote = block.extended ? " (extended)" : "";
+      formattedCheapBlocks.forEach((block) => {
         this.log(
-          `Period ${index + 1}: ${formattedStartTime} to ${formattedEndTime} (${block.durationHours} hours)${extendedNote} - Avg price: ${block.avgPrice.toFixed(2)}`,
+          `Period ${block.periodNumber}: ${block.formattedPeriod} (${block.durationHours} hours) - Avg price: ${block.avgPrice.toFixed(2)}`,
         );
       });
     } else {
       this.log("No cheap periods found for maximizing usage");
     }
 
-    if (expensiveBlocks.length > 0) {
+    if (formattedExpensiveBlocks.length > 0) {
       this.log("LIMIT USAGE during these expensive periods:");
-      expensiveBlocks.forEach((block, index) => {
-        const formattedStartTime = block.startTime.toLocaleString("en-US", {
-          timeZone: this.homey.clock.getTimezone(),
-          hour: "2-digit",
-          minute: "2-digit",
-          day: "2-digit",
-          month: "2-digit",
-        });
-        const formattedEndTime = block.endTime.toLocaleString("en-US", {
-          timeZone: this.homey.clock.getTimezone(),
-          hour: "2-digit",
-          minute: "2-digit",
-          day: "2-digit",
-          month: "2-digit",
-        });
-        const extendedNote = block.extended ? " (extended)" : "";
+      formattedExpensiveBlocks.forEach((block) => {
         this.log(
-          `Period ${index + 1}: ${formattedStartTime} to ${formattedEndTime} (${block.durationHours} hours)${extendedNote} - Avg price: ${block.avgPrice.toFixed(2)}`,
+          `Period ${block.periodNumber}: ${block.formattedPeriod} (${block.durationHours} hours) - Avg price: ${block.avgPrice.toFixed(2)}`,
         );
       });
     } else {
       this.log("No expensive periods found for limiting usage");
     }
+
+    // Return the formatted blocks for use in other functions
+    return {
+      cheapBlocks: formattedCheapBlocks,
+      expensiveBlocks: formattedExpensiveBlocks,
+    };
   }
 
   // async getHistoricalPrices(apiKey) {

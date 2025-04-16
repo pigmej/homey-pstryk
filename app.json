@@ -260,6 +260,56 @@
             "filter": "driver_id=pstryk_price"
           }
         ]
+      },
+      {
+        "id": "maximise_usage_during_changed",
+        "title": {
+          "en": "Maximise usage periods changed"
+        },
+        "tokens": [
+          {
+            "name": "maximise_usage_during",
+            "type": "string",
+            "title": {
+              "en": "Cheap periods"
+            },
+            "example": {
+              "en": "04/17, 01:00 to 04/17, 03:00"
+            }
+          }
+        ],
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=pstryk_price"
+          }
+        ]
+      },
+      {
+        "id": "minimise_usage_during_changed",
+        "title": {
+          "en": "Minimise usage periods changed"
+        },
+        "tokens": [
+          {
+            "name": "minimise_usage_during",
+            "type": "string",
+            "title": {
+              "en": "Expensive periods"
+            },
+            "example": {
+              "en": "04/16, 19:00 to 04/16, 21:00"
+            }
+          }
+        ],
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=pstryk_price"
+          }
+        ]
       }
     ]
   },
@@ -568,6 +618,52 @@
       "setable": false,
       "insigts": true,
       "icon": "/assets/expensive.svg"
+    },
+    "maximise_usage_during": {
+      "title": {
+        "en": "Maximise usage during these hours"
+      },
+      "desc": {
+        "en": "Maximise usage during these hours, 3 periods, each at least 1 hour long"
+      },
+      "tokens": [
+        {
+          "name": "maximise_usage_during",
+          "type": "string",
+          "title": {
+            "en": "maximise"
+          },
+          "example": {
+            "en": "03/27/2025 01:00"
+          }
+        }
+      ],
+      "type": "string",
+      "getable": true,
+      "setable": false
+    },
+    "minimise_usage_during": {
+      "title": {
+        "en": "Minimise usage during these hours"
+      },
+      "desc": {
+        "en": "Minimise usage during these hours, 3 periods, each at least 1 hour long"
+      },
+      "tokens": [
+        {
+          "name": "minimise_usage_during",
+          "type": "string",
+          "title": {
+            "en": "minimise"
+          },
+          "example": {
+            "en": "03/27/2025 01:00"
+          }
+        }
+      ],
+      "type": "string",
+      "getable": true,
+      "setable": false
     }
   }
 }

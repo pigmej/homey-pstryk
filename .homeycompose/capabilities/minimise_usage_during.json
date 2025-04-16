@@ -1,0 +1,23 @@
+{
+    "title": {
+        "en": "Minimise usage during these hours"
+    },
+    "desc": {
+        "en": "Minimise usage during these hours, 3 periods, each at least 1 hour long"
+    },
+    "tokens": [
+        {
+            "name": "minimise_usage_during",
+            "type": "string",
+            "title": {
+                "en": "minimise"
+            },
+            "example": {
+                "en": "03/27/2025 01:00"
+            }
+        }
+    ],
+    "type": "string",
+    "getable": true,
+    "setable": false
+}

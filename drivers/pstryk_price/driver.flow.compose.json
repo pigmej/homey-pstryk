@@ -147,6 +147,38 @@
                     "example": true
                 }
             ]
+        },
+        {
+            "id": "maximise_usage_during_changed",
+            "title": { "en": "Maximise usage periods changed" },
+            "tokens": [
+                {
+                    "name": "maximise_usage_during",
+                    "type": "string",
+                    "title": {
+                        "en": "Cheap periods"
+                    },
+                    "example": {
+                        "en": "04/17, 01:00 to 04/17, 03:00"
+                    }
+                }
+            ]
+        },
+        {
+            "id": "minimise_usage_during_changed",
+            "title": { "en": "Minimise usage periods changed" },
+            "tokens": [
+                {
+                    "name": "minimise_usage_during",
+                    "type": "string",
+                    "title": {
+                        "en": "Expensive periods"
+                    },
+                    "example": {
+                        "en": "04/16, 19:00 to 04/16, 21:00"
+                    }
+                }
+            ]
         }
     ]
 }
