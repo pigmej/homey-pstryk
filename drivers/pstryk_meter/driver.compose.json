@@ -4,7 +4,7 @@
     },
     "class": "sensor",
     "platforms": ["local"],
-    "connectivity": ["lan"],
+    "connectivity": [],
     "capabilities": [
         "measure_power",
         "measure_voltage",
@@ -12,8 +12,7 @@
         "measure_frequency"
     ],
     "energy": {
-        "cumulative": true,
-        "cumulativeImportedCapability": "meter_power"
+        "cumulative": true
     },
     "description": {
         "en": "Monitor energy consumption from PSTRYK smart meter"
