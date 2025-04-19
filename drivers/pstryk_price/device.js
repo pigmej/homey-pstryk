@@ -281,14 +281,14 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
     if (cheapBlocks.length > 0) {
       await this.setCapabilityValue(
         "maximise_usage_during",
-        cheapBlocks.map((block) => block.formattedPeriod).join(", "),
+        cheapBlocks.map((block) => block.formattedPeriod).join("\n"),
       );
     }
 
     if (expensiveBlocks.length > 0) {
       await this.setCapabilityValue(
         "minimise_usage_during",
-        expensiveBlocks.map((block) => block.formattedPeriod).join(", "),
+        expensiveBlocks.map((block) => block.formattedPeriod).join("\n"),
       );
     }
 
@@ -445,7 +445,7 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
           ...block,
           formattedStartTime,
           formattedEndTime,
-          formattedPeriod: `${formattedStartTime} to ${formattedEndTime}`,
+          formattedPeriod: `${formattedStartTime} to ${formattedEndTime} (Avg: ${block.avgPrice.toFixed(4)} PLN/kWh)`,
           periodNumber: index + 1,
         };
       });
