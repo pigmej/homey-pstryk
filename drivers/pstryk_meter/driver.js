@@ -23,7 +23,7 @@ module.exports = class PstrykMeterDriver extends Homey.Driver {
       {
         name: "PSTRYK Energy Meter",
         data: {
-          id: "pstryk-meter2",
+          id: "pstryk-meter",
         },
         settings: {
           ipAddress: "",
