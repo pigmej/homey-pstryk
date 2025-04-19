@@ -34,40 +34,52 @@ module.exports = class PstrykMeterDriver extends Homey.Driver {
     ];
   }
 
+  /**
+   * Discover PSTRYK meters on the network
+   * This is a placeholder for future implementation of automatic discovery
+   */
+  async discoverDevices() {
+    this.log("Discovering PSTRYK meters on the network");
+
+    // This would be implemented with mDNS or similar discovery mechanism
+    // For now, we'll just return an empty array
+    return [];
+  }
+
   // /**
   //  * Test the connection to a PSTRYK meter
   //  * @param {string} ipAddress The IP address of the meter
   //  * @returns {Promise<boolean>} True if the connection is successful
   //  */
-  // async testConnection(ipAddress) {
-  //   try {
-  //     this.log(`Testing connection to ${ipAddress}`);
+  async testConnection(ipAddress) {
+    try {
+      this.log(`Testing connection to ${ipAddress}`);
 
-  //     const response = await fetch(`http://${ipAddress}/state`, {
-  //       method: "GET",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //       },
-  //       timeout: 5000, // 5 second timeout
-  //     });
+      const response = await fetch(`http://${ipAddress}/state`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        timeout: 5000, // 5 second timeout
+      });
 
-  //     if (!response.ok) {
-  //       throw new Error(`HTTP error! status: ${response.status}`);
-  //     }
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-  //     const data = await response.json();
+      const data = await response.json();
 
-  //     // Check if the response contains the expected data structure
-  //     if (data && data.multiSensor && data.multiSensor.sensors) {
-  //       this.log("Connection test successful");
-  //       return true;
-  //     } else {
-  //       this.log("Connection test failed: Invalid response format");
-  //       return false;
-  //     }
-  //   } catch (error) {
-  //     this.error(`Connection test failed: ${error.message}`);
-  //     return false;
-  //   }
-  // }
+      // Check if the response contains the expected data structure
+      if (data && data.multiSensor && data.multiSensor.sensors) {
+        this.log("Connection test successful");
+        return true;
+      } else {
+        this.log("Connection test failed: Invalid response format");
+        return false;
+      }
+    } catch (error) {
+      this.error(`Connection test failed: ${error.message}`);
+      return false;
+    }
+  }
 };

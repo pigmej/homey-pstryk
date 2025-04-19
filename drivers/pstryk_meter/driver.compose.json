@@ -2,9 +2,9 @@
     "name": {
         "en": "PSTRYK Energy Meter"
     },
-    "class": "sensor",
+    "class": "other",
     "platforms": ["local"],
-    "connectivity": [],
+    "connectivity": ["lan"],
     "capabilities": [
         "measure_power",
         "measure_voltage",
@@ -26,9 +26,7 @@
         {
             "id": "list_devices",
             "template": "list_devices",
-            "navigation": {
-                "next": "add_devices"
-            },
+            "navigation": { "next": "add_devices" },
             "options": { "singular": true }
         },
         {

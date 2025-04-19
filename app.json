@@ -26,11 +26,13 @@
       "name": {
         "en": "PSTRYK Energy Meter"
       },
-      "class": "sensor",
+      "class": "other",
       "platforms": [
         "local"
       ],
-      "connectivity": [],
+      "connectivity": [
+        "lan"
+      ],
       "capabilities": [
         "measure_power",
         "measure_voltage",
@@ -66,7 +68,7 @@
       ],
       "compose": {
         "driver": {
-          "class": "PstrykMeterDriver",
+          "class": "PstrykMeterDriver2",
           "file": "driver.js"
         }
       },
