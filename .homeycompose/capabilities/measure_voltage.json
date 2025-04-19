@@ -1,0 +1,19 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Voltage"
+  },
+  "getable": true,
+  "setable": false,
+  "units": {
+    "en": "V"
+  },
+  "min": 0,
+  "max": 300,
+  "insights": true,
+  "desc": {
+    "en": "Voltage in Volts"
+  },
+  "chartType": "stepLine",
+  "decimals": 1
+}

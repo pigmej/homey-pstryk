@@ -21,6 +21,166 @@
   "author": {
     "name": "Jedrzej Nowak"
   },
+  "drivers": [
+    {
+      "name": {
+        "en": "PSTRYK Energy Meter"
+      },
+      "class": "sensor",
+      "platforms": [
+        "local"
+      ],
+      "connectivity": [
+        "lan"
+      ],
+      "capabilities": [
+        "measure_power",
+        "measure_voltage",
+        "measure_current",
+        "measure_frequency"
+      ],
+      "energy": {
+        "cumulative": true
+      },
+      "description": {
+        "en": "Monitor energy consumption from PSTRYK smart meter"
+      },
+      "images": {
+        "small": "/drivers/pstryk_meter/assets/images/small.png",
+        "large": "/drivers/pstryk_meter/assets/images/large.png",
+        "xlarge": "/drivers/pstryk_meter/assets/images/xlarge.png"
+      },
+      "pair": [
+        {
+          "id": "list_devices",
+          "template": "list_devices",
+          "navigation": {
+            "next": "add_devices"
+          }
+        },
+        {
+          "id": "add_devices",
+          "template": "add_devices"
+        }
+      ],
+      "id": "pstryk_meter",
+      "settings": [
+        {
+          "id": "ipAddress",
+          "type": "text",
+          "label": {
+            "en": "IP Address"
+          },
+          "value": "",
+          "hint": {
+            "en": "IP address of your PSTRYK meter"
+          }
+        },
+        {
+          "id": "updateInterval",
+          "type": "number",
+          "label": {
+            "en": "Update Interval"
+          },
+          "value": 30,
+          "min": 1,
+          "max": 300,
+          "units": {
+            "en": "seconds"
+          },
+          "hint": {
+            "en": "How often to update energy readings (10-300 seconds)"
+          }
+        },
+        {
+          "id": "phaseSelection",
+          "type": "dropdown",
+          "label": {
+            "en": "Phase Selection"
+          },
+          "value": "0",
+          "values": [
+            {
+              "id": "0",
+              "label": {
+                "en": "Total (All Phases)"
+              }
+            },
+            {
+              "id": "1",
+              "label": {
+                "en": "Phase 1"
+              }
+            },
+            {
+              "id": "2",
+              "label": {
+                "en": "Phase 2"
+              }
+            },
+            {
+              "id": "3",
+              "label": {
+                "en": "Phase 3"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": {
+        "en": "PSTRYK Price Monitor"
+      },
+      "class": "service",
+      "platforms": [
+        "local"
+      ],
+      "capabilities": [],
+      "connectivity": [],
+      "description": {
+        "en": "Monitors electricity prices from PSTRYK API"
+      },
+      "images": {
+        "small": "/drivers/pstryk_price/assets/images/small.png",
+        "large": "/drivers/pstryk_price/assets/images/large.png",
+        "xlarge": "/drivers/pstryk_price/assets/images/xlarge.png"
+      },
+      "pair": [
+        {
+          "id": "list_devices",
+          "template": "list_devices",
+          "navigation": {
+            "next": "add_devices"
+          },
+          "options": {
+            "singular": true
+          }
+        },
+        {
+          "id": "add_devices",
+          "template": "add_devices"
+        }
+      ],
+      "compose": {
+        "driver": {
+          "class": "PstrykPriceDriver",
+          "file": "driver.js"
+        }
+      },
+      "id": "pstryk_price",
+      "settings": [
+        {
+          "id": "apiKey",
+          "type": "text",
+          "label": {
+            "en": "Api KEY"
+          },
+          "value": ""
+        }
+      ]
+    }
+  ],
   "flow": {
     "triggers": [
       {
@@ -313,60 +473,6 @@
       }
     ]
   },
-  "drivers": [
-    {
-      "name": {
-        "en": "PSTRYK Price Monitor"
-      },
-      "class": "service",
-      "platforms": [
-        "local"
-      ],
-      "capabilities": [],
-      "connectivity": [],
-      "description": {
-        "en": "Monitors electricity prices from PSTRYK API"
-      },
-      "images": {
-        "small": "/drivers/pstryk_price/assets/images/small.png",
-        "large": "/drivers/pstryk_price/assets/images/large.png",
-        "xlarge": "/drivers/pstryk_price/assets/images/xlarge.png"
-      },
-      "pair": [
-        {
-          "id": "list_devices",
-          "template": "list_devices",
-          "navigation": {
-            "next": "add_devices"
-          },
-          "options": {
-            "singular": true
-          }
-        },
-        {
-          "id": "add_devices",
-          "template": "add_devices"
-        }
-      ],
-      "compose": {
-        "driver": {
-          "class": "PstrykPriceDriver",
-          "file": "driver.js"
-        }
-      },
-      "id": "pstryk_price",
-      "settings": [
-        {
-          "id": "apiKey",
-          "type": "text",
-          "label": {
-            "en": "Api KEY"
-          },
-          "value": ""
-        }
-      ]
-    }
-  ],
   "capabilities": {
     "cheapest_h0": {
       "title": {
@@ -641,6 +747,101 @@
       "type": "string",
       "getable": true,
       "setable": false
+    },
+    "measure_current": {
+      "type": "number",
+      "title": {
+        "en": "Current"
+      },
+      "getable": true,
+      "setable": false,
+      "units": {
+        "en": "A"
+      },
+      "min": 0,
+      "max": 100,
+      "insights": true,
+      "desc": {
+        "en": "Current in Amperes"
+      },
+      "chartType": "stepLine",
+      "decimals": 2
+    },
+    "measure_frequency": {
+      "type": "number",
+      "title": {
+        "en": "Frequency"
+      },
+      "getable": true,
+      "setable": false,
+      "units": {
+        "en": "Hz"
+      },
+      "min": 0,
+      "max": 100,
+      "insights": true,
+      "desc": {
+        "en": "Frequency in Hertz"
+      },
+      "chartType": "stepLine",
+      "decimals": 2
+    },
+    "measure_power": {
+      "type": "number",
+      "title": {
+        "en": "Power"
+      },
+      "getable": true,
+      "setable": false,
+      "units": {
+        "en": "W"
+      },
+      "min": 0,
+      "max": 20000,
+      "insights": true,
+      "desc": {
+        "en": "Power in Watts"
+      },
+      "chartType": "stepLine",
+      "decimals": 0
+    },
+    "measure_voltage": {
+      "type": "number",
+      "title": {
+        "en": "Voltage"
+      },
+      "getable": true,
+      "setable": false,
+      "units": {
+        "en": "V"
+      },
+      "min": 0,
+      "max": 300,
+      "insights": true,
+      "desc": {
+        "en": "Voltage in Volts"
+      },
+      "chartType": "stepLine",
+      "decimals": 1
+    },
+    "meter_power": {
+      "type": "number",
+      "title": {
+        "en": "Energy Meter"
+      },
+      "getable": true,
+      "setable": false,
+      "units": {
+        "en": "kWh"
+      },
+      "min": 0,
+      "max": 1000000,
+      "insights": true,
+      "desc": {
+        "en": "Energy usage in kilowatt-hour"
+      },
+      "chartType": "stepLine",
+      "decimals": 3
     },
     "minimise_usage_during": {
       "title": {

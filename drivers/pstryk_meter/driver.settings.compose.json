@@ -1,0 +1,63 @@
+[
+    {
+        "id": "ipAddress",
+        "type": "text",
+        "label": {
+            "en": "IP Address"
+        },
+        "value": "",
+        "hint": {
+            "en": "IP address of your PSTRYK meter"
+        }
+    },
+    {
+        "id": "updateInterval",
+        "type": "number",
+        "label": {
+            "en": "Update Interval"
+        },
+        "value": 30,
+        "min": 1,
+        "max": 300,
+        "units": {
+            "en": "seconds"
+        },
+        "hint": {
+            "en": "How often to update energy readings (10-300 seconds)"
+        }
+    },
+    {
+        "id": "phaseSelection",
+        "type": "dropdown",
+        "label": {
+            "en": "Phase Selection"
+        },
+        "value": "0",
+        "values": [
+            {
+                "id": "0",
+                "label": {
+                    "en": "Total (All Phases)"
+                }
+            },
+            {
+                "id": "1",
+                "label": {
+                    "en": "Phase 1"
+                }
+            },
+            {
+                "id": "2",
+                "label": {
+                    "en": "Phase 2"
+                }
+            },
+            {
+                "id": "3",
+                "label": {
+                    "en": "Phase 3"
+                }
+            }
+        ]
+    }
+]

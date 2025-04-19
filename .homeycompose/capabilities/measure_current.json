@@ -1,0 +1,19 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Current"
+  },
+  "getable": true,
+  "setable": false,
+  "units": {
+    "en": "A"
+  },
+  "min": 0,
+  "max": 100,
+  "insights": true,
+  "desc": {
+    "en": "Current in Amperes"
+  },
+  "chartType": "stepLine",
+  "decimals": 2
+}

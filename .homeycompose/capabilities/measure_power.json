@@ -1,0 +1,19 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Power"
+  },
+  "getable": true,
+  "setable": false,
+  "units": {
+    "en": "W"
+  },
+  "min": 0,
+  "max": 20000,
+  "insights": true,
+  "desc": {
+    "en": "Power in Watts"
+  },
+  "chartType": "stepLine",
+  "decimals": 0
+}

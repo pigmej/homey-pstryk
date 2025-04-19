@@ -1,0 +1,36 @@
+{
+    "name": {
+        "en": "PSTRYK Energy Meter"
+    },
+    "class": "sensor",
+    "platforms": ["local"],
+    "connectivity": ["lan"],
+    "capabilities": [
+        "measure_power",
+        "measure_voltage",
+        "measure_current",
+        "measure_frequency"
+    ],
+    "energy": { "cumulative": true },
+    "description": {
+        "en": "Monitor energy consumption from PSTRYK smart meter"
+    },
+    "images": {
+        "small": "/drivers/pstryk_meter/assets/images/small.png",
+        "large": "/drivers/pstryk_meter/assets/images/large.png",
+        "xlarge": "/drivers/pstryk_meter/assets/images/xlarge.png"
+    },
+    "pair": [
+        {
+            "id": "list_devices",
+            "template": "list_devices",
+            "navigation": {
+                "next": "add_devices"
+            }
+        },
+        {
+            "id": "add_devices",
+            "template": "add_devices"
+        }
+    ]
+}

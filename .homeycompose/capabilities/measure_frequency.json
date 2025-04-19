@@ -1,0 +1,19 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Frequency"
+  },
+  "getable": true,
+  "setable": false,
+  "units": {
+    "en": "Hz"
+  },
+  "min": 0,
+  "max": 100,
+  "insights": true,
+  "desc": {
+    "en": "Frequency in Hertz"
+  },
+  "chartType": "stepLine",
+  "decimals": 2
+}

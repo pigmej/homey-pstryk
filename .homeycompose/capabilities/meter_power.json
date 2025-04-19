@@ -1,0 +1,19 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Energy Meter"
+  },
+  "getable": true,
+  "setable": false,
+  "units": {
+    "en": "kWh"
+  },
+  "min": 0,
+  "max": 1000000,
+  "insights": true,
+  "desc": {
+    "en": "Energy usage in kilowatt-hour"
+  },
+  "chartType": "stepLine",
+  "decimals": 3
+}
