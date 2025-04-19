@@ -23,63 +23,51 @@ module.exports = class PstrykMeterDriver extends Homey.Driver {
       {
         name: "PSTRYK Energy Meter",
         data: {
-          id: "pstryk-meter-" + Date.now(),
+          id: "pstryk-meter2",
         },
         settings: {
           ipAddress: "",
-          updateInterval: 30,
+          updateInterval: 1,
           phaseSelection: "0",
         },
       },
     ];
   }
 
-  /**
-   * Discover PSTRYK meters on the network
-   * This is a placeholder for future implementation of automatic discovery
-   */
-  async discoverDevices() {
-    this.log("Discovering PSTRYK meters on the network");
+  // /**
+  //  * Test the connection to a PSTRYK meter
+  //  * @param {string} ipAddress The IP address of the meter
+  //  * @returns {Promise<boolean>} True if the connection is successful
+  //  */
+  // async testConnection(ipAddress) {
+  //   try {
+  //     this.log(`Testing connection to ${ipAddress}`);
 
-    // This would be implemented with mDNS or similar discovery mechanism
-    // For now, we'll just return an empty array
-    return [];
-  }
+  //     const response = await fetch(`http://${ipAddress}/state`, {
+  //       method: "GET",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       timeout: 5000, // 5 second timeout
+  //     });
 
-  /**
-   * Test the connection to a PSTRYK meter
-   * @param {string} ipAddress The IP address of the meter
-   * @returns {Promise<boolean>} True if the connection is successful
-   */
-  async testConnection(ipAddress) {
-    try {
-      this.log(`Testing connection to ${ipAddress}`);
+  //     if (!response.ok) {
+  //       throw new Error(`HTTP error! status: ${response.status}`);
+  //     }
 
-      const response = await fetch(`http://${ipAddress}/state`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        timeout: 5000, // 5 second timeout
-      });
+  //     const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      // Check if the response contains the expected data structure
-      if (data && data.multiSensor && data.multiSensor.sensors) {
-        this.log("Connection test successful");
-        return true;
-      } else {
-        this.log("Connection test failed: Invalid response format");
-        return false;
-      }
-    } catch (error) {
-      this.error(`Connection test failed: ${error.message}`);
-      return false;
-    }
-  }
+  //     // Check if the response contains the expected data structure
+  //     if (data && data.multiSensor && data.multiSensor.sensors) {
+  //       this.log("Connection test successful");
+  //       return true;
+  //     } else {
+  //       this.log("Connection test failed: Invalid response format");
+  //       return false;
+  //     }
+  //   } catch (error) {
+  //     this.error(`Connection test failed: ${error.message}`);
+  //     return false;
+  //   }
+  // }
 };

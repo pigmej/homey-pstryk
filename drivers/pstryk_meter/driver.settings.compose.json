@@ -16,14 +16,14 @@
         "label": {
             "en": "Update Interval"
         },
-        "value": 30,
+        "value": 1,
         "min": 1,
         "max": 300,
         "units": {
             "en": "seconds"
         },
         "hint": {
-            "en": "How often to update energy readings (10-300 seconds)"
+            "en": "How often to update energy readings (1-300 seconds)"
         }
     },
     {

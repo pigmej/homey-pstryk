@@ -11,7 +11,10 @@
         "measure_current",
         "measure_frequency"
     ],
-    "energy": { "cumulative": true },
+    "energy": {
+        "cumulative": true,
+        "cumulativeImportedCapability": "meter_power"
+    },
     "description": {
         "en": "Monitor energy consumption from PSTRYK smart meter"
     },
@@ -26,11 +29,18 @@
             "template": "list_devices",
             "navigation": {
                 "next": "add_devices"
-            }
+            },
+            "options": { "singular": true }
         },
         {
             "id": "add_devices",
             "template": "add_devices"
         }
-    ]
+    ],
+    "compose": {
+        "driver": {
+            "class": "PstrykMeterDriver",
+            "file": "driver.js"
+        }
+    }
 }
