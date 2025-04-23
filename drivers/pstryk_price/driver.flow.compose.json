@@ -43,6 +43,36 @@
                     "filter": "driver_id=pstryk_price"
                 }
             ]
+        },
+        {
+            "id": "current_price_compare",
+            "title": { "en": "Current price is..." },
+            "args": [
+                {
+                    "name": "device",
+                    "type": "device",
+                    "filter": "driver_id=pstryk_price"
+                },
+                {
+                    "name": "operator",
+                    "type": "dropdown",
+                    "label": { "en": "Comparison" },
+                    "values": [
+                        { "id": "gt", "label": { "en": ">" } },
+                        { "id": "lt", "label": { "en": "<" } },
+                        { "id": "eq", "label": { "en": "=" } }
+                    ]
+                },
+                {
+                    "name": "value",
+                    "type": "number",
+                    "label": { "en": "Price (PLN/kWh)" },
+                    "placeholder": 0.5000,
+                    "min": -5,
+                    "max": 5,
+                    "decimals": 4
+                }
+            ]
         }
     ],
     "triggers": [

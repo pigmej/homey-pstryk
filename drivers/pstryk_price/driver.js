@@ -47,6 +47,20 @@ module.exports = class PstrykPriceDriver extends Homey.Driver {
         const { device } = args;
         return device.getCapabilityValue('minimise_usage_now');
       });
+      
+    // Current price comparison
+    this.homey.flow.getConditionCard('current_price_compare')
+      .registerRunListener(async (args, state) => {
+        const currentPrice = args.device.getCapabilityValue('current_hour_price');
+        const compareValue = parseFloat(args.value);
+        
+        switch(args.operator) {
+          case 'gt': return currentPrice > compareValue;
+          case 'lt': return currentPrice < compareValue;
+          case 'eq': return Math.abs(currentPrice - compareValue) < 0.0001;
+          default: throw new Error('Invalid operator');
+        }
+      });
   }
 
   async updatePrices(retryCount = 0) {

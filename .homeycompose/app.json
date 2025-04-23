@@ -10,7 +10,6 @@
         "en": "Monitor current and historical electricity prices from PSTRYK, use PSTRYK meter to monitor the current energy consumption"
     },
     "category": ["energy"],
-    "permissions": [],
     "images": {
         "small": "/assets/images/small.png",
         "large": "/assets/images/large.png"
