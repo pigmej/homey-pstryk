@@ -9,8 +9,44 @@ module.exports = class PstrykPriceDriver extends Homey.Driver {
   async onInit() {
     this.log("Pstryk price driver has been initialized");
 
+    // Register flow conditions
+    this._registerFlowConditions();
+
     // Initial update for all devices
     setTimeout(this.updatePrices.bind(this), 2000);
+  }
+
+  /**
+   * Register flow conditions
+   */
+  _registerFlowConditions() {
+    // Is current price cheap
+    this.homey.flow.getConditionCard('is_currently_cheap')
+      .registerRunListener(async (args, state) => {
+        const { device } = args;
+        return device.getCapabilityValue('currently_cheap');
+      });
+
+    // Is current price expensive
+    this.homey.flow.getConditionCard('is_currently_expensive')
+      .registerRunListener(async (args, state) => {
+        const { device } = args;
+        return device.getCapabilityValue('currently_expensive');
+      });
+
+    // Is maximise period active
+    this.homey.flow.getConditionCard('is_maximise_period_active')
+      .registerRunListener(async (args, state) => {
+        const { device } = args;
+        return device.getCapabilityValue('maximise_usage_now');
+      });
+
+    // Is minimise period active
+    this.homey.flow.getConditionCard('is_minimise_period_active')
+      .registerRunListener(async (args, state) => {
+        const { device } = args;
+        return device.getCapabilityValue('minimise_usage_now');
+      });
   }
 
   async updatePrices(retryCount = 0) {
