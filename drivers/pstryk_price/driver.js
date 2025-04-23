@@ -9,25 +9,7 @@ module.exports = class PstrykPriceDriver extends Homey.Driver {
   async onInit() {
     this.log("Pstryk price driver has been initialized");
 
-    this._lastCheckHour = null;
-
-    this._hourlyCheckInterval = setInterval(() => {
-      const now = new Date();
-      const seconds = now.getSeconds();
-      const minutes = now.getMinutes();
-
-      // If we're at 15 seconds past the hour (00:15, 01:15, etc.)
-      if (minutes === 0 && seconds >= 15) {
-        if (this._lastCheckHour === now.getHours()) {
-          return;
-        }
-        this.log("Hour changed, updating prices");
-        this.updatePrices();
-        this._lastCheckHour = now.getHours();
-      }
-    }, 5000); // Check every 5 seconds
-
-    // Initial update
+    // Initial update for all devices
     setTimeout(this.updatePrices.bind(this), 2000);
   }
 

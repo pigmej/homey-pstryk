@@ -179,6 +179,34 @@
                     }
                 }
             ]
+        },
+        {
+            "id": "maximise_usage_now_changed",
+            "title": { "en": "Maximise usage now status changed" },
+            "tokens": [
+                {
+                    "name": "maximise_usage_now",
+                    "type": "boolean",
+                    "title": {
+                        "en": "Is maximise period"
+                    },
+                    "example": true
+                }
+            ]
+        },
+        {
+            "id": "minimise_usage_now_changed",
+            "title": { "en": "Minimise usage now status changed" },
+            "tokens": [
+                {
+                    "name": "minimise_usage_now",
+                    "type": "boolean",
+                    "title": {
+                        "en": "Is minimise period"
+                    },
+                    "example": true
+                }
+            ]
         }
     ]
 }

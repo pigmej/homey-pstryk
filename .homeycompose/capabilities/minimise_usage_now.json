@@ -1,0 +1,9 @@
+{
+  "type": "boolean",
+  "title": { "en": "Minimise Usage Now" },
+  "desc": { "en": "Current time is within a minimise usage period" },
+  "getable": true,
+  "setable": false,
+  "insights": true,
+  "icon": "/assets/expensive.svg"
+}
