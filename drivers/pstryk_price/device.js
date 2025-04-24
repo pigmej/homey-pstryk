@@ -28,15 +28,15 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
 
     this._hasRefreshedToday = false;
     this._previousBlocks = null;
-    
+
     // Add periodic check for current usage period
     this._currentCheckInterval = this.homey.setInterval(() => {
       this.checkCurrentUsagePeriod();
     }, 60 * 1000); // Check every minute
-    
+
     // Setup daily price refresh
     this.setupPriceRefresh();
-    
+
     // Initial update
     setTimeout(() => this.updatePrices(), 2000);
   }
@@ -59,12 +59,12 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
   onSettings({ oldSettings, newSettings, changedKeys }) {
     this.log("New settings", newSettings);
     this.settings = newSettings;
-    
+
     if (changedKeys.includes("apiKey")) {
       this.log("API key changed, updating prices");
       this.updatePrices();
     }
-    
+
     if (changedKeys.includes("priceRefreshHour")) {
       this.log("Price refresh hour changed, updating refresh schedule");
       // Clear existing interval and set up a new one
@@ -73,7 +73,7 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       }
       this.setupPriceRefresh();
     }
-    
+
     return Promise.resolve();
   }
 
@@ -91,18 +91,18 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
    */
   async onDeleted() {
     this.log("PstrykPriceDevice has been deleted");
-    
+
     // Clear the price refresh interval
     if (this._priceRefreshInterval) {
       clearInterval(this._priceRefreshInterval);
     }
-    
+
     // Clear the current check interval
     if (this._currentCheckInterval) {
       this.homey.clearInterval(this._currentCheckInterval);
     }
   }
-  
+
   /**
    * Check if current time is within a maximise or minimise usage period
    */
@@ -112,32 +112,44 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
     let isMinimise = false;
 
     if (this._previousBlocks) {
-      // Check maximise periods
-      isMaximise = this._previousBlocks.cheapBlocks.some(block => {
-        const blockStart = block.startTime instanceof Date ? 
-          block.startTime : new Date(block.startTime);
-        const blockEnd = block.endTime instanceof Date ? 
-          block.endTime : new Date(block.endTime);
-        return now >= blockStart && now < blockEnd;
+      // Check maximise periods with inclusive end time
+      isMaximise = this._previousBlocks.cheapBlocks.some((block) => {
+        const blockStart =
+          block.startTime instanceof Date
+            ? block.startTime
+            : new Date(block.startTime);
+        const blockEnd =
+          block.endTime instanceof Date
+            ? block.endTime
+            : new Date(block.endTime);
+        return now >= blockStart && now <= blockEnd; // Changed to <= to include end time
       });
 
-      // Check minimise periods
-      isMinimise = this._previousBlocks.expensiveBlocks.some(block => {
-        const blockStart = block.startTime instanceof Date ? 
-          block.startTime : new Date(block.startTime);
-        const blockEnd = block.endTime instanceof Date ? 
-          block.endTime : new Date(block.endTime);
-        return now >= blockStart && now < blockEnd;
+      // Check minimise periods with inclusive end time
+      isMinimise = this._previousBlocks.expensiveBlocks.some((block) => {
+        const blockStart =
+          block.startTime instanceof Date
+            ? block.startTime
+            : new Date(block.startTime);
+        const blockEnd =
+          block.endTime instanceof Date
+            ? block.endTime
+            : new Date(block.endTime);
+        return now >= blockStart && now <= blockEnd; // Changed to <= to include end time
       });
     }
 
     // Update capabilities
-    this.setCapabilityValue("maximise_usage_now", isMaximise)
-      .catch(err => this.error('Error setting maximise_usage_now:', err));
-    this.setCapabilityValue("minimise_usage_now", isMinimise)
-      .catch(err => this.error('Error setting minimise_usage_now:', err));
-    
-    this.log(`Current usage period check: Maximise=${isMaximise}, Minimise=${isMinimise}`);
+    this.setCapabilityValue("maximise_usage_now", isMaximise).catch((err) =>
+      this.error("Error setting maximise_usage_now:", err),
+    );
+    this.setCapabilityValue("minimise_usage_now", isMinimise).catch((err) =>
+      this.error("Error setting minimise_usage_now:", err),
+    );
+
+    this.log(
+      `Current usage period check: Maximise=${isMaximise}, Minimise=${isMinimise}`,
+    );
   }
 
   async apiRequest(endpoint, params, apiKey) {
@@ -189,27 +201,44 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
    */
   async setupPriceRefresh() {
     const refreshHour = this.settings.priceRefreshHour || 15;
-    
+
     this.log(`Setting up daily price refresh at hour ${refreshHour}`);
-    
+
     this._priceRefreshInterval = setInterval(() => {
       const now = new Date();
-      const isRefreshTime = now.getHours() === refreshHour && 
-                           now.getMinutes() >= 0 && 
-                           now.getMinutes() < 5; // 5-minute window for refresh
-      
+
+      // Check every hour at :00 minute
+      if (now.getMinutes() === 0) {
+        this.log("Hourly price update triggered");
+        this.updatePrices();
+      }
+
+      // Daily refresh logic
+      const isRefreshTime =
+        now.getHours() === refreshHour &&
+        now.getMinutes() >= 0 &&
+        now.getMinutes() < 5; // 5-minute window for refresh
+
       if (isRefreshTime && !this._hasRefreshedToday) {
-        this.log('Daily price refresh triggered');
+        this.log("Daily price refresh triggered");
         this.updatePrices();
         this._hasRefreshedToday = true;
       } else if (now.getHours() !== refreshHour) {
         this._hasRefreshedToday = false;
       }
-    }, 60 * 1000); // Check every minute
+    }, 15 * 1000); // Check every 15s
   }
 
   async updatePrices() {
     try {
+      // Add immediate check for hour transition
+      const now = new Date();
+      if (this.lastUpdateHour !== now.getHours()) {
+        this.log("Hour changed, forcing price update");
+        // await this.setCapabilityValue("current_hour_price", null);
+        // await this.setCapabilityValue("current_hour_value", null);
+      }
+
       // this.log(this.settings);
       var apiKey = this.settings["apiKey"];
       if (!apiKey) {
@@ -218,12 +247,12 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       }
 
       this.log("Updating prices from PSTRYK API");
-      
+
       // Initial check of current usage period
       if (this._previousBlocks) {
         this.checkCurrentUsagePeriod();
       }
-      
+
       // Get prices for next 24 hours and cheapest times
       const { currentPriceInfo, cheapestHours, cheapestHoursValues } =
         await this.getCurrentPrice(apiKey);
@@ -280,6 +309,9 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       // Get historical prices (last 7 days)
       // const historicalData = await this.getHistoricalPrices(apiKey);
       // this.log("Historical data updated");
+
+      // Store current hour for next check
+      this.lastUpdateHour = now.getHours();
     } catch (error) {
       this.error("Error updating prices:", error);
     }
@@ -417,7 +449,8 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
 
     const futureFrames = frames.filter((frame) => {
       const frameStart = new Date(frame.start);
-      return frameStart > now && frameStart < cutoff;
+      const frameEnd = new Date(frame.end);
+      return frameEnd > now && frameStart < cutoff; // Include current ongoing periods
     });
 
     if (futureFrames.length === 0) {
@@ -526,21 +559,26 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
     // Merge with previous blocks if they exist and are still valid
     if (this._previousBlocks) {
       // Keep only blocks that haven't ended yet
-      const validCheapBlocks = this._previousBlocks.cheapBlocks?.filter(block => 
-        new Date(block.endTime) > now
-      ) || [];
-      
-      const validExpensiveBlocks = this._previousBlocks.expensiveBlocks?.filter(block => 
-        new Date(block.endTime) > now
-      ) || [];
-      
+      const validCheapBlocks =
+        this._previousBlocks.cheapBlocks?.filter(
+          (block) => new Date(block.endTime) > now,
+        ) || [];
+
+      const validExpensiveBlocks =
+        this._previousBlocks.expensiveBlocks?.filter(
+          (block) => new Date(block.endTime) > now,
+        ) || [];
+
       // Merge with new blocks
       if (validCheapBlocks.length > 0) {
         cheapBlocks = this.mergeBlocks([...validCheapBlocks, ...cheapBlocks]);
       }
-      
+
       if (validExpensiveBlocks.length > 0) {
-        expensiveBlocks = this.mergeBlocks([...validExpensiveBlocks, ...expensiveBlocks]);
+        expensiveBlocks = this.mergeBlocks([
+          ...validExpensiveBlocks,
+          ...expensiveBlocks,
+        ]);
       }
     }
 
@@ -575,7 +613,7 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
           ...block,
           formattedStartTime,
           formattedEndTime,
-          formattedPeriod: `${formattedStartTime} to ${formattedEndTime} (Avg: ${block.avgPrice.toFixed(4)} PLN/kWh, Valid until ${validUntil})`,
+          formattedPeriod: `${formattedStartTime} to ${formattedEndTime} (Avg: ${block.avgPrice.toFixed(4)} PLN/kWh)`,
           periodNumber: index + 1,
         };
       });
@@ -583,13 +621,13 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
 
     const formattedCheapBlocks = formatBlocks(cheapBlocks);
     const formattedExpensiveBlocks = formatBlocks(expensiveBlocks);
-    
+
     // Store for next update
     this._previousBlocks = {
       cheapBlocks: formattedCheapBlocks,
-      expensiveBlocks: formattedExpensiveBlocks
+      expensiveBlocks: formattedExpensiveBlocks,
     };
-      
+
     // Check current usage period immediately after updating blocks
     this.checkCurrentUsagePeriod();
 
@@ -624,7 +662,7 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       expensiveBlocks: formattedExpensiveBlocks,
     };
   }
-  
+
   /**
    * Merge overlapping or adjacent time blocks
    * @param {Array} blocks - Array of time blocks to merge
@@ -632,45 +670,47 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
    */
   mergeBlocks(blocks) {
     if (!blocks || blocks.length === 0) return [];
-    
+
     // Sort blocks by start time
-    const sortedBlocks = [...blocks].sort((a, b) => 
-      new Date(a.startTime) - new Date(b.startTime)
+    const sortedBlocks = [...blocks].sort(
+      (a, b) => new Date(a.startTime) - new Date(b.startTime),
     );
-    
+
     return sortedBlocks.reduce((merged, block) => {
       // Convert dates to Date objects if they're strings
-      const blockStart = block.startTime instanceof Date ? 
-        block.startTime : new Date(block.startTime);
-      const blockEnd = block.endTime instanceof Date ? 
-        block.endTime : new Date(block.endTime);
-      
+      const blockStart =
+        block.startTime instanceof Date
+          ? block.startTime
+          : new Date(block.startTime);
+      const blockEnd =
+        block.endTime instanceof Date ? block.endTime : new Date(block.endTime);
+
       const last = merged[merged.length - 1];
-      
+
       if (last) {
-        const lastEnd = last.endTime instanceof Date ? 
-          last.endTime : new Date(last.endTime);
-        
+        const lastEnd =
+          last.endTime instanceof Date ? last.endTime : new Date(last.endTime);
+
         // If this block starts within 15 minutes of the last block ending, merge them
         if (blockStart - lastEnd <= 15 * 60 * 1000) {
           // Merge the blocks
           last.endTime = new Date(Math.max(lastEnd, blockEnd));
           last.durationHours = Math.round(
-            (last.endTime - last.startTime) / (1000 * 60 * 60)
+            (last.endTime - last.startTime) / (1000 * 60 * 60),
           );
           // Average the prices
           last.avgPrice = (last.avgPrice + block.avgPrice) / 2;
           return merged;
         }
       }
-      
+
       // Add as a new block
       merged.push({
         ...block,
         startTime: blockStart,
-        endTime: blockEnd
+        endTime: blockEnd,
       });
-      
+
       return merged;
     }, []);
   }
