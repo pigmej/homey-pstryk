@@ -29,10 +29,10 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
     this._hasRefreshedToday = false;
     this._previousBlocks = null;
 
-    // Add periodic check for current usage period
+    // Add periodic check for current usage period (reduced frequency)
     this._currentCheckInterval = this.homey.setInterval(() => {
       this.checkCurrentUsagePeriod();
-    }, 60 * 1000); // Check every minute
+    }, 5 * 60 * 1000); // Check every 5 minutes
 
     // Setup daily price refresh
     this.setupPriceRefresh();
@@ -101,12 +101,26 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
     if (this._currentCheckInterval) {
       this.homey.clearInterval(this._currentCheckInterval);
     }
+    
+    // Clear the smart scheduling timeouts
+    if (this._refreshTimeout) {
+      clearTimeout(this._refreshTimeout);
+    }
+    
+    if (this._hourlyTimeout) {
+      clearTimeout(this._hourlyTimeout);
+    }
   }
 
   /**
    * Check if current time is within a maximise or minimise usage period
    */
   checkCurrentUsagePeriod() {
+    // Use existing data if recent (30 seconds)
+    if (this._lastUsageCheck && (Date.now() - this._lastUsageCheck < 30000)) {
+      return;
+    }
+    
     const now = new Date();
     let isMaximise = false;
     let isMinimise = false;
@@ -139,17 +153,30 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       });
     }
 
-    // Update capabilities
-    this.setCapabilityValue("maximise_usage_now", isMaximise).catch((err) =>
-      this.error("Error setting maximise_usage_now:", err),
-    );
-    this.setCapabilityValue("minimise_usage_now", isMinimise).catch((err) =>
-      this.error("Error setting minimise_usage_now:", err),
-    );
+    // Only update capabilities if values have changed
+    const currentMaximise = this.getCapabilityValue("maximise_usage_now");
+    const currentMinimise = this.getCapabilityValue("minimise_usage_now");
+    
+    if (currentMaximise !== isMaximise) {
+      this.setCapabilityValue("maximise_usage_now", isMaximise).catch((err) =>
+        this.error("Error setting maximise_usage_now:", err),
+      );
+    }
+    
+    if (currentMinimise !== isMinimise) {
+      this.setCapabilityValue("minimise_usage_now", isMinimise).catch((err) =>
+        this.error("Error setting minimise_usage_now:", err),
+      );
+    }
 
-    this.log(
-      `Current usage period check: Maximise=${isMaximise}, Minimise=${isMinimise}`,
-    );
+    // Track last check time
+    this._lastUsageCheck = Date.now();
+    
+    if (currentMaximise !== isMaximise || currentMinimise !== isMinimise) {
+      this.log(
+        `Usage period changed: Maximise=${isMaximise}, Minimise=${isMinimise}`,
+      );
+    }
   }
 
   async apiRequest(endpoint, params, apiKey) {
@@ -197,49 +224,81 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
   }
 
   /**
-   * Set up the daily price refresh interval
+   * Set up the daily price refresh with smart scheduling
    */
   async setupPriceRefresh() {
     const refreshHour = this.settings.priceRefreshHour || 15;
-
+    
     this.log(`Setting up daily price refresh at hour ${refreshHour}`);
-
-    this._priceRefreshInterval = setInterval(() => {
+    
+    const scheduleNextRefresh = () => {
       const now = new Date();
-
-      // Check every hour at :00 minute
-      if (now.getMinutes() === 0) {
-        this.log("Hourly price update triggered");
-        this.updatePrices();
+      let nextRefresh = new Date(now);
+      
+      // Set to next refresh hour with 5-minute window
+      if(now.getHours() >= refreshHour) {
+        nextRefresh.setDate(now.getDate() + 1);
       }
+      nextRefresh.setHours(refreshHour, 0, 0, 0);
+      
+      const timeUntilRefresh = nextRefresh - now;
+      
+      this._refreshTimeout = setTimeout(async () => {
+        try {
+          this.log('Daily price refresh triggered');
+          await this.updatePrices();
+          this._hasRefreshedToday = true;
+        } catch(error) {
+          this.error('Daily refresh failed, retrying in 15m', error);
+          this._refreshTimeout = setTimeout(scheduleNextRefresh, 15 * 60 * 1000);
+        }
+        scheduleNextRefresh();
+      }, timeUntilRefresh);
+      
+      this.log(`Next daily refresh scheduled in ${Math.round(timeUntilRefresh / (60 * 60 * 1000))} hours`);
+    };
 
-      // Daily refresh logic
-      const isRefreshTime =
-        now.getHours() === refreshHour &&
-        now.getMinutes() >= 0 &&
-        now.getMinutes() < 5; // 5-minute window for refresh
+    // Add smart hourly checker
+    const setupHourlyCheck = () => {
+      const now = new Date();
+      const nextHour = new Date(now);
+      nextHour.setHours(now.getHours() + 1);
+      nextHour.setMinutes(0, 0, 0);
+      
+      const timeUntilNextHour = nextHour - now;
+      
+      this._hourlyTimeout = setTimeout(async () => {
+        try {
+          this.log('Scheduled hourly update');
+          await this.updatePrices();
+        } catch(error) {
+          this.error('Hourly update failed', error);
+        } finally {
+          setupHourlyCheck();
+        }
+      }, timeUntilNextHour);
+      
+      this.log(`Next hourly update scheduled in ${Math.round(timeUntilNextHour / (60 * 1000))} minutes`);
+    };
 
-      if (isRefreshTime && !this._hasRefreshedToday) {
-        this.log("Daily price refresh triggered");
-        this.updatePrices();
-        this._hasRefreshedToday = true;
-      } else if (now.getHours() !== refreshHour) {
-        this._hasRefreshedToday = false;
-      }
-    }, 15 * 1000); // Check every 15s
+    // Initial setup
+    scheduleNextRefresh();
+    setupHourlyCheck();
   }
 
-  async updatePrices() {
+  async updatePrices(retryCount = 0) {
     try {
-      // Add immediate check for hour transition
       const now = new Date();
-      if (this.lastUpdateHour !== now.getHours()) {
-        this.log("Hour changed, forcing price update");
-        // await this.setCapabilityValue("current_hour_price", null);
-        // await this.setCapabilityValue("current_hour_value", null);
+      const lastUpdate = this._lastPriceUpdate || 0;
+      
+      // Cache prices for 5 minutes unless during refresh window
+      if (now - lastUpdate < 300000 && 
+          !(now.getHours() === (this.settings.priceRefreshHour || 15) && 
+            now.getMinutes() < 5)) {
+        this.log("Using cached price data (updated less than 5 minutes ago)");
+        return;
       }
 
-      // this.log(this.settings);
       var apiKey = this.settings["apiKey"];
       if (!apiKey) {
         this.log("API key not set in device");
@@ -252,6 +311,9 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       if (this._previousBlocks) {
         this.checkCurrentUsagePeriod();
       }
+      
+      // Track this update time
+      this._lastPriceUpdate = Date.now();
 
       // Get prices for next 24 hours and cheapest times
       const { currentPriceInfo, cheapestHours, cheapestHoursValues } =
