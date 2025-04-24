@@ -1,1 +1,22 @@
-[{ "id": "apiKey", "type": "text", "label": { "en": "Api KEY" }, "value": "" }]
+[
+    {
+        "id": "apiKey",
+        "type": "text",
+        "label": { "en": "Api KEY" },
+        "value": ""
+    },
+    {
+        "id": "todayLabel",
+        "type": "text",
+        "label": { "en": "Label for 'Today'" },
+        "placeholder": { "en": "Today" },
+        "value": "Today"
+    },
+    {
+        "id": "tomorrowLabel",
+        "type": "text",
+        "label": { "en": "Label for 'Tomorrow'" },
+        "placeholder": { "en": "Tomorrow" },
+        "value": "Tomorrow"
+    }
+]

@@ -18,6 +18,6 @@
     "type": "boolean",
     "getable": true,
     "setable": false,
-    "insigts": true,
+    "insights": true,
     "icon": "/assets/expensive.svg"
 }

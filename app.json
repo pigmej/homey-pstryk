@@ -185,6 +185,28 @@
             "en": "Api KEY"
           },
           "value": ""
+        },
+        {
+          "id": "todayLabel",
+          "type": "text",
+          "label": {
+            "en": "Label for 'Today'"
+          },
+          "placeholder": {
+            "en": "Today"
+          },
+          "value": "Today"
+        },
+        {
+          "id": "tomorrowLabel",
+          "type": "text",
+          "label": {
+            "en": "Label for 'Tomorrow'"
+          },
+          "placeholder": {
+            "en": "Tomorrow"
+          },
+          "value": "Tomorrow"
         }
       ]
     }
@@ -707,7 +729,7 @@
       },
       "getable": true,
       "setable": false,
-      "insigts": true
+      "insights": true
     },
     "cheapest_h1": {
       "title": {
@@ -837,8 +859,7 @@
         "en": "PLN/kWh"
       },
       "getable": true,
-      "setable": false,
-      "insigts": true
+      "setable": false
     },
     "current_hour_value": {
       "title": {
@@ -883,7 +904,7 @@
       "type": "boolean",
       "getable": true,
       "setable": false,
-      "insigts": true,
+      "insights": true,
       "icon": "/assets/cheap.svg"
     },
     "currently_expensive": {
@@ -906,7 +927,7 @@
       "type": "boolean",
       "getable": true,
       "setable": false,
-      "insigts": true,
+      "insights": true,
       "icon": "/assets/expensive.svg"
     },
     "maximise_usage_during": {

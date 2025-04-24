@@ -74,6 +74,11 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       this.setupPriceRefresh();
     }
 
+    if (changedKeys.includes("todayLabel") || changedKeys.includes("tomorrowLabel")) {
+      this.log('Date labels changed, updating periods');
+      this.updatePrices(); // Refresh displayed periods with new labels
+    }
+
     return Promise.resolve();
   }
 
@@ -647,35 +652,63 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
     // Format blocks for display and return
     const formatBlocks = (blocks) => {
       return blocks.map((block, index) => {
-        const formattedStartTime = block.startTime.toLocaleString([], {
+        const now = new Date();
+        const tomorrow = new Date(now);
+        tomorrow.setDate(now.getDate() + 1);
+
+        const getDateLabel = (date) => {
+          const dateStr = date.toLocaleDateString([], {
+            timeZone: this.homey.clock.getTimezone(),
+            day: "2-digit",
+            month: "2-digit",
+          });
+          
+          const todayLabel = this.getSetting('todayLabel') || 'Today';
+          const tomorrowLabel = this.getSetting('tomorrowLabel') || 'Tomorrow';
+          
+          if (date.toDateString() === now.toDateString()) {
+            return todayLabel;
+          } else if (date.toDateString() === tomorrow.toDateString()) {
+            return tomorrowLabel;
+          }
+          return dateStr;
+        };
+
+        // Format start time
+        const startDateLabel = getDateLabel(block.startTime);
+        const startTime = block.startTime.toLocaleTimeString([], {
           timeZone: this.homey.clock.getTimezone(),
           hour: "2-digit",
           minute: "2-digit",
-          day: "2-digit",
-          month: "2-digit",
           hourCycle: "h23",
-        });
+        }).replace("24:", "00:");
 
-        const formattedEndTime = block.endTime.toLocaleString([], {
+        // Format end time
+        const endDateLabel = getDateLabel(block.endTime);
+        const endTime = block.endTime.toLocaleTimeString([], {
           timeZone: this.homey.clock.getTimezone(),
           hour: "2-digit",
           minute: "2-digit",
-          day: "2-digit",
-          month: "2-digit",
           hourCycle: "h23",
-        });
+        }).replace("24:", "00:");
 
-        const validUntil = block.endTime.toLocaleDateString([], {
-          timeZone: this.homey.clock.getTimezone(),
-          day: "2-digit",
-          month: "2-digit",
-        });
+        // Build final formatted string
+        let formattedPeriod;
+        if (startDateLabel === endDateLabel) {
+          formattedPeriod = `${startDateLabel} ${startTime} to ${endTime}`;
+        } else {
+          formattedPeriod = `${startDateLabel} ${startTime} to ${endDateLabel} ${endTime}`;
+        }
+
+        // Store the original formatted times for reference
+        const formattedStartTime = `${startDateLabel} ${startTime}`;
+        const formattedEndTime = `${endDateLabel} ${endTime}`;
 
         return {
           ...block,
           formattedStartTime,
           formattedEndTime,
-          formattedPeriod: `${formattedStartTime} to ${formattedEndTime} (Avg: ${block.avgPrice.toFixed(4)} PLN/kWh)`,
+          formattedPeriod: `${formattedPeriod} (Avg: ${block.avgPrice.toFixed(4)} PLN/kWh)`,
           periodNumber: index + 1,
         };
       });
