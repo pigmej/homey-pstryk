@@ -30,9 +30,12 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
     this._previousBlocks = null;
 
     // Add periodic check for current usage period (reduced frequency)
-    this._currentCheckInterval = this.homey.setInterval(() => {
-      this.checkCurrentUsagePeriod();
-    }, 5 * 60 * 1000); // Check every 5 minutes
+    this._currentCheckInterval = this.homey.setInterval(
+      () => {
+        this.checkCurrentUsagePeriod();
+      },
+      5 * 60 * 1000,
+    ); // Check every 5 minutes
 
     // Setup daily price refresh
     this.setupPriceRefresh();
@@ -74,8 +77,11 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       this.setupPriceRefresh();
     }
 
-    if (changedKeys.includes("todayLabel") || changedKeys.includes("tomorrowLabel")) {
-      this.log('Date labels changed, updating periods');
+    if (
+      changedKeys.includes("todayLabel") ||
+      changedKeys.includes("tomorrowLabel")
+    ) {
+      this.log("Date labels changed, updating periods");
       this.updatePrices(); // Refresh displayed periods with new labels
     }
 
@@ -106,12 +112,12 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
     if (this._currentCheckInterval) {
       this.homey.clearInterval(this._currentCheckInterval);
     }
-    
+
     // Clear the smart scheduling timeouts
     if (this._refreshTimeout) {
       clearTimeout(this._refreshTimeout);
     }
-    
+
     if (this._hourlyTimeout) {
       clearTimeout(this._hourlyTimeout);
     }
@@ -122,10 +128,10 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
    */
   checkCurrentUsagePeriod() {
     // Use existing data if recent (30 seconds)
-    if (this._lastUsageCheck && (Date.now() - this._lastUsageCheck < 30000)) {
+    if (this._lastUsageCheck && Date.now() - this._lastUsageCheck < 30000) {
       return;
     }
-    
+
     const now = new Date();
     let isMaximise = false;
     let isMinimise = false;
@@ -161,13 +167,13 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
     // Only update capabilities if values have changed
     const currentMaximise = this.getCapabilityValue("maximise_usage_now");
     const currentMinimise = this.getCapabilityValue("minimise_usage_now");
-    
+
     if (currentMaximise !== isMaximise) {
       this.setCapabilityValue("maximise_usage_now", isMaximise).catch((err) =>
         this.error("Error setting maximise_usage_now:", err),
       );
     }
-    
+
     if (currentMinimise !== isMinimise) {
       this.setCapabilityValue("minimise_usage_now", isMinimise).catch((err) =>
         this.error("Error setting minimise_usage_now:", err),
@@ -176,7 +182,7 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
 
     // Track last check time
     this._lastUsageCheck = Date.now();
-    
+
     if (currentMaximise !== isMaximise || currentMinimise !== isMinimise) {
       this.log(
         `Usage period changed: Maximise=${isMaximise}, Minimise=${isMinimise}`,
@@ -233,34 +239,39 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
    */
   async setupPriceRefresh() {
     const refreshHour = this.settings.priceRefreshHour || 15;
-    
+
     this.log(`Setting up daily price refresh at hour ${refreshHour}`);
-    
+
     const scheduleNextRefresh = () => {
       const now = new Date();
       let nextRefresh = new Date(now);
-      
+
       // Set to next refresh hour with 5-minute window
-      if(now.getHours() >= refreshHour) {
+      if (now.getHours() >= refreshHour) {
         nextRefresh.setDate(now.getDate() + 1);
       }
       nextRefresh.setHours(refreshHour, 0, 0, 0);
-      
+
       const timeUntilRefresh = nextRefresh - now;
-      
+
       this._refreshTimeout = setTimeout(async () => {
         try {
-          this.log('Daily price refresh triggered');
+          this.log("Daily price refresh triggered");
           await this.updatePrices();
           this._hasRefreshedToday = true;
-        } catch(error) {
-          this.error('Daily refresh failed, retrying in 15m', error);
-          this._refreshTimeout = setTimeout(scheduleNextRefresh, 15 * 60 * 1000);
+        } catch (error) {
+          this.error("Daily refresh failed, retrying in 15m", error);
+          this._refreshTimeout = setTimeout(
+            scheduleNextRefresh,
+            15 * 60 * 1000,
+          );
         }
         scheduleNextRefresh();
       }, timeUntilRefresh);
-      
-      this.log(`Next daily refresh scheduled in ${Math.round(timeUntilRefresh / (60 * 60 * 1000))} hours`);
+
+      this.log(
+        `Next daily refresh scheduled in ${Math.round(timeUntilRefresh / (60 * 60 * 1000))} hours`,
+      );
     };
 
     // Add smart hourly checker
@@ -269,21 +280,23 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       const nextHour = new Date(now);
       nextHour.setHours(now.getHours() + 1);
       nextHour.setMinutes(0, 0, 0);
-      
+
       const timeUntilNextHour = nextHour - now;
-      
+
       this._hourlyTimeout = setTimeout(async () => {
         try {
-          this.log('Scheduled hourly update');
+          this.log("Scheduled hourly update");
           await this.updatePrices();
-        } catch(error) {
-          this.error('Hourly update failed', error);
+        } catch (error) {
+          this.error("Hourly update failed", error);
         } finally {
           setupHourlyCheck();
         }
       }, timeUntilNextHour);
-      
-      this.log(`Next hourly update scheduled in ${Math.round(timeUntilNextHour / (60 * 1000))} minutes`);
+
+      this.log(
+        `Next hourly update scheduled in ${Math.round(timeUntilNextHour / (60 * 1000))} minutes`,
+      );
     };
 
     // Initial setup
@@ -295,11 +308,15 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
     try {
       const now = new Date();
       const lastUpdate = this._lastPriceUpdate || 0;
-      
+
       // Cache prices for 5 minutes unless during refresh window
-      if (now - lastUpdate < 300000 && 
-          !(now.getHours() === (this.settings.priceRefreshHour || 15) && 
-            now.getMinutes() < 5)) {
+      if (
+        now - lastUpdate < 300000 &&
+        !(
+          now.getHours() === (this.settings.priceRefreshHour || 15) &&
+          now.getMinutes() < 5
+        )
+      ) {
         this.log("Using cached price data (updated less than 5 minutes ago)");
         return;
       }
@@ -316,7 +333,7 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       if (this._previousBlocks) {
         this.checkCurrentUsagePeriod();
       }
-      
+
       // Track this update time
       this._lastPriceUpdate = Date.now();
 
@@ -528,7 +545,7 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
     // Function to find optimal blocks by processing frames in price order
     const findOptimalBlocks = (frames, isAscending = true) => {
       // Create a copy of frames that we can modify
-      const availableFrames = [...frames];
+      var availableFrames = [...frames];
 
       // Sort by price (ascending for cheap, descending for expensive)
       availableFrames.sort((a, b) => {
@@ -540,9 +557,12 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       const blocks = [];
 
       // Process frames until we have 3 blocks or run out of frames
+      const processedFrames = new Set();
+
       while (availableFrames.length > 0 && blocks.length < 3) {
         // Take the first frame (cheapest or most expensive)
         const startFrame = availableFrames.shift();
+        if (processedFrames.has(startFrame.start)) continue;
 
         // Start a new block with this frame
         const block = {
@@ -553,50 +573,79 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
           frames: [startFrame],
         };
 
+        processedFrames.add(startFrame.start);
+
         // Try to extend the block with consecutive hours
         let extended = true;
 
-        // Keep extending until we can't anymore or reach 3 hours
-        while (extended && block.frames.length < 3) {
+        // Keep extending until we can't anymore or reach 6 hours
+        while (extended && block.frames.length < 6) {
           extended = false;
-
-          // Find the next consecutive frame
+          
           const lastFrameEnd = new Date(
             block.frames[block.frames.length - 1].end,
           );
-
-          // Find index of next consecutive frame in available frames
-          const nextFrameIndex = availableFrames.findIndex((frame) => {
+          
+          // Look for adjacent frames in both directions
+          const adjacentFrames = availableFrames.filter(frame => {
             const frameStart = new Date(frame.start);
-            // Check if frame starts right after block ends (within 5 minutes)
-            return Math.abs(frameStart - lastFrameEnd) < 5 * 60 * 1000;
+            return frameStart.getTime() === lastFrameEnd.getTime() || // Next hour
+                  frameStart.getTime() === lastFrameEnd.getTime() - 3600000; // Previous hour
           });
 
-          if (nextFrameIndex !== -1) {
-            const nextFrame = availableFrames[nextFrameIndex];
+          // Find best match within price threshold
+          let bestFrame = null;
+          let bestTimeDiff = Infinity;
 
-            // Check if price is similar (within 5%)
-            const priceDiff = Math.abs(nextFrame.price_gross - block.avgPrice);
-            const priceDiffPercent = (priceDiff / block.avgPrice) * 100;
-
-            if (priceDiffPercent <= 10) {
-              // Remove this frame from available frames
-              availableFrames.splice(nextFrameIndex, 1);
-
-              // Add to the block
-              block.frames.push(nextFrame);
-              block.endTime = new Date(nextFrame.end);
-              block.durationHours = block.frames.length;
-              block.avgPrice =
-                block.frames.reduce((sum, f) => sum + f.price_gross, 0) /
-                block.frames.length;
-              block.extended = true;
-
-              extended = true;
+          adjacentFrames.forEach(frame => {
+            const frameTime = new Date(frame.start);
+            const timeDiff = Math.abs(frameTime - lastFrameEnd);
+            
+            // Prioritize same price first, then closest time
+            if (frame.price_gross === block.avgPrice && timeDiff < bestTimeDiff) {
+              bestFrame = frame;
+              bestTimeDiff = timeDiff;
             }
+          });
+
+          // If no exact price match found, look for nearby frames with small price difference
+          if (!bestFrame) {
+            adjacentFrames.forEach(frame => {
+              const priceDiff = Math.abs(frame.price_gross - block.avgPrice);
+              const timeDiff = Math.abs(new Date(frame.start) - lastFrameEnd);
+              
+              if (priceDiff <= block.avgPrice * 0.10 && timeDiff < bestTimeDiff) {
+                bestFrame = frame;
+                bestTimeDiff = timeDiff;
+              }
+            });
+          }
+
+          if (bestFrame) {
+            const frameIndex = availableFrames.findIndex(f => f.start === bestFrame.start);
+            availableFrames.splice(frameIndex, 1);
+            
+            // Insert at correct position based on time
+            const bestFrameTime = new Date(bestFrame.start);
+            if (bestFrameTime > lastFrameEnd) {
+              // Add to end
+              block.frames.push(bestFrame);
+              block.endTime = new Date(bestFrame.end);
+            } else {
+              // Add to beginning
+              block.frames.unshift(bestFrame);
+              block.startTime = new Date(bestFrame.start);
+            }
+            
+            // Recalculate average
+            block.avgPrice = block.frames.reduce((sum, f) => sum + f.price_gross, 0) / block.frames.length;
+            block.durationHours = block.frames.length;
+            extended = true;
           }
         }
 
+        // Add all frames in this block to processed set
+        block.frames.forEach((f) => processedFrames.add(f.start));
         blocks.push(block);
 
         // Remove any frames that overlap with this block from available frames
@@ -662,10 +711,10 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
             day: "2-digit",
             month: "2-digit",
           });
-          
-          const todayLabel = this.getSetting('todayLabel') || 'Today';
-          const tomorrowLabel = this.getSetting('tomorrowLabel') || 'Tomorrow';
-          
+
+          const todayLabel = this.getSetting("todayLabel") || "Today";
+          const tomorrowLabel = this.getSetting("tomorrowLabel") || "Tomorrow";
+
           if (date.toDateString() === now.toDateString()) {
             return todayLabel;
           } else if (date.toDateString() === tomorrow.toDateString()) {
@@ -676,21 +725,25 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
 
         // Format start time
         const startDateLabel = getDateLabel(block.startTime);
-        const startTime = block.startTime.toLocaleTimeString([], {
-          timeZone: this.homey.clock.getTimezone(),
-          hour: "2-digit",
-          minute: "2-digit",
-          hourCycle: "h23",
-        }).replace("24:", "00:");
+        const startTime = block.startTime
+          .toLocaleTimeString([], {
+            timeZone: this.homey.clock.getTimezone(),
+            hour: "2-digit",
+            minute: "2-digit",
+            hourCycle: "h23",
+          })
+          .replace("24:", "00:");
 
         // Format end time
         const endDateLabel = getDateLabel(block.endTime);
-        const endTime = block.endTime.toLocaleTimeString([], {
-          timeZone: this.homey.clock.getTimezone(),
-          hour: "2-digit",
-          minute: "2-digit",
-          hourCycle: "h23",
-        }).replace("24:", "00:");
+        const endTime = block.endTime
+          .toLocaleTimeString([], {
+            timeZone: this.homey.clock.getTimezone(),
+            hour: "2-digit",
+            minute: "2-digit",
+            hourCycle: "h23",
+          })
+          .replace("24:", "00:");
 
         // Build final formatted string
         let formattedPeriod;
@@ -766,49 +819,61 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
   mergeBlocks(blocks) {
     if (!blocks || blocks.length === 0) return [];
 
-    // Sort blocks by start time
+    // Sort by start time
     const sortedBlocks = [...blocks].sort(
-      (a, b) => new Date(a.startTime) - new Date(b.startTime),
+      (a, b) => new Date(a.startTime) - new Date(b.startTime)
     );
 
-    return sortedBlocks.reduce((merged, block) => {
-      // Convert dates to Date objects if they're strings
-      const blockStart =
-        block.startTime instanceof Date
-          ? block.startTime
-          : new Date(block.startTime);
-      const blockEnd =
-        block.endTime instanceof Date ? block.endTime : new Date(block.endTime);
+    const merged = [];
+    let currentBlock = sortedBlocks[0];
 
-      const last = merged[merged.length - 1];
+    for (let i = 1; i < sortedBlocks.length; i++) {
+      const nextBlock = sortedBlocks[i];
+      const currentEnd = new Date(currentBlock.endTime);
+      const nextStart = new Date(nextBlock.startTime);
+      
+      // Check for merge conditions:
+      // 1. Time gap less than 2 hours AND 
+      // 2. Price difference less than 5% OR same price group
+      const timeGap = nextStart - currentEnd;
+      const priceDiff = Math.abs(currentBlock.avgPrice - nextBlock.avgPrice);
+      const samePriceGroup = priceDiff < 0.0001; // Consider same price if difference < 0.01%
 
-      if (last) {
-        const lastEnd =
-          last.endTime instanceof Date ? last.endTime : new Date(last.endTime);
+      if (timeGap <= 7200000 && (priceDiff < currentBlock.avgPrice * 0.05 || samePriceGroup)) {
+        // Merge the blocks
+        currentBlock.endTime = new Date(Math.max(currentEnd, nextBlock.endTime));
+        currentBlock.durationHours = Math.round(
+          (currentBlock.endTime - currentBlock.startTime) / 3600000
+        );
+        
+        // Weighted average based on duration
+        const totalHours = currentBlock.durationHours + nextBlock.durationHours;
+        currentBlock.avgPrice = 
+          (currentBlock.avgPrice * currentBlock.durationHours +
+           nextBlock.avgPrice * nextBlock.durationHours) /
+          totalHours;
 
-        // If this block starts within 15 minutes of the last block ending, merge them
-        if (blockStart - lastEnd <= 15 * 60 * 1000) {
-          // Merge the blocks
-          last.endTime = new Date(Math.max(lastEnd, blockEnd));
-          last.durationHours = Math.round(
-            (last.endTime - last.startTime) / (1000 * 60 * 60),
-          );
-          // Average the prices
-          last.avgPrice = (last.avgPrice + block.avgPrice) / 2;
-          return merged;
-        }
+        // Merge frames while maintaining chronological order
+        currentBlock.frames = [...currentBlock.frames, ...nextBlock.frames]
+          .sort((a, b) => new Date(a.start) - new Date(b.start));
+      } else {
+        merged.push(currentBlock);
+        currentBlock = nextBlock;
       }
+    }
+    
+    merged.push(currentBlock);
 
-      // Add as a new block
-      merged.push({
-        ...block,
-        startTime: blockStart,
-        endTime: blockEnd,
-      });
-
-      return merged;
-    }, []);
+    // Final sorting: longer duration first, then lower price
+    return merged.sort((a, b) => {
+      // Prioritize longer durations for same price groups
+      if (Math.abs(a.avgPrice - b.avgPrice) < 0.0001) {
+        return b.durationHours - a.durationHours;
+      }
+      return a.avgPrice - b.avgPrice;
+    }).slice(0, 3); // Return top 3
   }
+
 
   // async getHistoricalPrices(apiKey) {
   //   const now = new Date();
