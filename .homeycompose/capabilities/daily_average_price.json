@@ -1,0 +1,28 @@
+{
+    "title": {
+        "en": "Daily average price"
+    },
+    "desc": {
+        "en": "Average electricity price value"
+    },
+    "tokens": [
+        {
+            "name": "daily_average_price",
+            "type": "number",
+            "title": {
+                "en": "PLN/kWh"
+            },
+            "example": 0.505
+        }
+    ],
+    "type": "number",
+    "min": -5,
+    "max": 5,
+    "decimals": 4,
+    "units": {
+        "en": "PLN/kWh"
+    },
+    "getable": true,
+    "setable": false,
+    "insights": true
+}

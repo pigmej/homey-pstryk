@@ -25,6 +25,7 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
     await this.addCapability("minimise_usage_during");
     await this.addCapability("maximise_usage_now");
     await this.addCapability("minimise_usage_now");
+    await this.addCapability("daily_average_price");
 
     this._hasRefreshedToday = false;
     this._previousBlocks = null;
@@ -340,6 +341,11 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       // Get prices for next 24 hours and cheapest times
       const { currentPriceInfo, cheapestHours, cheapestHoursValues } =
         await this.getCurrentPrice(apiKey);
+
+      // Get daily average price
+      const dailyAvgPrice = await this.getDailyAveragePrice(apiKey);
+      await this.setCapabilityValue("daily_average_price", dailyAvgPrice);
+      this.log("Daily average price updated:", dailyAvgPrice);
 
       await this.setCapabilityValue(
         "current_hour_price",
@@ -874,6 +880,58 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
     }).slice(0, 3); // Return top 3
   }
 
+
+  async getDailyAveragePrice(apiKey) {
+    try {
+      const now = new Date();
+      const todayStart = new Date(now);
+      todayStart.setHours(0, 0, 0, 0);
+      
+      const todayEnd = new Date(now);
+      todayEnd.setHours(23, 59, 59, 999);
+      
+      const response = await this.apiRequest(
+        "/integrations/pricing/",
+        {
+          resolution: "day",
+          window_start: todayStart.toISOString(),
+          window_end: todayEnd.toISOString(),
+        },
+        apiKey,
+      );
+      
+      // Get the daily average price from response
+      if (response && response.frames && response.frames.length > 0) {
+        // Return the price_gross_avg from the first (and only) frame
+        this.log("Daily average price data:", response.frames[0]);
+        return response.frames[0].price_gross_avg || 0;
+      }
+      
+      // If no data is available, fallback to calculating average from hourly prices
+      this.log("No daily average price data available, calculating from hourly data");
+      const hourlyResponse = await this.apiRequest(
+        "/integrations/pricing/",
+        {
+          resolution: "hour",
+          window_start: todayStart.toISOString(),
+          window_end: todayEnd.toISOString(),
+        },
+        apiKey,
+      );
+      
+      if (hourlyResponse && hourlyResponse.frames && hourlyResponse.frames.length > 0) {
+        // Calculate average from hourly prices
+        const sum = hourlyResponse.frames.reduce((total, frame) => total + frame.price_gross, 0);
+        return sum / hourlyResponse.frames.length;
+      }
+      
+      // Return 0 if no data available
+      return 0;
+    } catch (error) {
+      this.error("Error getting daily average price:", error);
+      return 0;
+    }
+  }
 
   // async getHistoricalPrices(apiKey) {
   //   const now = new Date();

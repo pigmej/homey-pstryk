@@ -1,6 +1,27 @@
 {
     "conditions": [
         {
+            "id": "current_price_compare_to_daily_avg",
+            "title": { "en": "Current price compared to daily average" },
+            "args": [
+                {
+                    "name": "device",
+                    "type": "device",
+                    "filter": "driver_id=pstryk_price"
+                },
+                {
+                    "name": "operator",
+                    "type": "dropdown",
+                    "label": { "en": "Comparison" },
+                    "values": [
+                        { "id": "gt", "label": { "en": ">" } },
+                        { "id": "lt", "label": { "en": "<" } },
+                        { "id": "eq", "label": { "en": "=" } }
+                    ]
+                }
+            ]
+        },
+        {
             "id": "is_currently_cheap",
             "title": { "en": "Is current price cheap" },
             "args": [
@@ -76,6 +97,20 @@
         }
     ],
     "triggers": [
+        {
+            "id": "daily_average_price_changed",
+            "title": { "en": "Daily average price changed" },
+            "tokens": [
+                {
+                    "name": "daily_average_price",
+                    "type": "number",
+                    "title": {
+                        "en": "PLN/kWh"
+                    },
+                    "example": 0.485
+                }
+            ]
+        },
         {
             "id": "current_hour_price_changed",
             "title": { "en": "Current price changed" },

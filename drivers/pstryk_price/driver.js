@@ -61,6 +61,20 @@ module.exports = class PstrykPriceDriver extends Homey.Driver {
           default: throw new Error('Invalid operator');
         }
       });
+      
+    // Current price compared to daily average
+    this.homey.flow.getConditionCard('current_price_compare_to_daily_avg')
+      .registerRunListener(async (args, state) => {
+        const currentPrice = args.device.getCapabilityValue('current_hour_price');
+        const dailyAvgPrice = args.device.getCapabilityValue('daily_average_price');
+        
+        switch(args.operator) {
+          case 'gt': return currentPrice > dailyAvgPrice;
+          case 'lt': return currentPrice < dailyAvgPrice;
+          case 'eq': return Math.abs(currentPrice - dailyAvgPrice) < 0.0001;
+          default: throw new Error('Invalid operator');
+        }
+      });
   }
 
   async updatePrices(retryCount = 0) {
