@@ -24,5 +24,6 @@
     },
     "getable": true,
     "setable": false,
-    "insigts": true
+    "insights": true,
+    "icon": "/assets/cheapest_h1_value.svg"
 }

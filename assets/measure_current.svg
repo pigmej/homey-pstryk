@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none">
+  <!-- A symbol for current -->
+  <text x="6" y="15" font-size="12" font-weight="bold" font-family="Arial, sans-serif" fill="#2196F3">A</text>
+  <!-- Current flow arrows/waves -->
+  <path d="M12 7C15 7 17 9 20 9" stroke="#2196F3" stroke-width="2" stroke-linecap="round"/>
+  <path d="M12 12C15 12 17 14 20 14" stroke="#2196F3" stroke-width="2" stroke-linecap="round"/>
+  <path d="M12 17C15 17 17 19 20 19" stroke="#2196F3" stroke-width="2" stroke-linecap="round"/>
+</svg>

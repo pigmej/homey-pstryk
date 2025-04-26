@@ -24,5 +24,6 @@
     },
     "getable": true,
     "setable": false,
-    "insights": true
+    "insights": true,
+    "icon": "/assets/daily_average_price.svg"
 }

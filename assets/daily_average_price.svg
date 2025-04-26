@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Chart line representing average -->
+  <path d="M3 12h18" stroke="#2196F3" stroke-width="1.5"/>
+  <!-- Trend line through average -->
+  <path d="M3 18L7 14L11 15L16 9L21 6" stroke="#2196F3" stroke-width="2"/>
+  <!-- Center dot representing the average value -->
+  <circle cx="12" cy="12" r="2.5" fill="#2196F3"/>
+  <!-- Small dots representing data points -->
+  <circle cx="7" cy="14" r="1" fill="#2196F3"/>
+  <circle cx="11" cy="15" r="1" fill="#2196F3"/>
+  <circle cx="16" cy="9" r="1" fill="#2196F3"/>
+  <circle cx="21" cy="6" r="1" fill="#2196F3"/>
+</svg>

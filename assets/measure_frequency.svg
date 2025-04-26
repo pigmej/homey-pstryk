@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none">
+  <!-- Frequency waves -->
+  <path d="M2 12C3.5 6 5.5 6 7 12C8.5 18 10.5 18 12 12C13.5 6 15.5 6 17 12C18.5 18 20.5 18 22 12" 
+        stroke="#FF5722" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Hz text -->
+  <text x="12" y="20" text-anchor="middle" font-size="5" font-weight="bold" fill="#FF5722" font-family="Arial, sans-serif">Hz</text>
+</svg>
