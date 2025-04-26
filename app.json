@@ -918,7 +918,6 @@
           "example": 0.505
         }
       ],
-      "insights": true,
       "type": "number",
       "min": -5,
       "max": 5,
@@ -927,7 +926,39 @@
         "en": "PLN/kWh"
       },
       "getable": true,
-      "setable": false
+      "setable": false,
+      "insights": true,
+      "uiComponent": "sensor",
+      "icon": "/assets/icon.svg",
+      "color": {
+        "type": "continuous",
+        "value": {
+          "minimum": -1,
+          "maximum": 3,
+          "stops": [
+            {
+              "value": -1,
+              "color": "#0cce6b"
+            },
+            {
+              "value": 0,
+              "color": "#43c3ff"
+            },
+            {
+              "value": 1,
+              "color": "#ffd00a"
+            },
+            {
+              "value": 2,
+              "color": "#ff9600"
+            },
+            {
+              "value": 3,
+              "color": "#ff2a00"
+            }
+          ]
+        }
+      }
     },
     "current_hour_value": {
       "title": {
