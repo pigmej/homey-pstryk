@@ -1,4 +1,6 @@
 {
+    "actions": [],
+    "conditions": [],
     "triggers": [
         {
             "id": "daily_average_price_changed",

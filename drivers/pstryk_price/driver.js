@@ -11,9 +11,25 @@ module.exports = class PstrykPriceDriver extends Homey.Driver {
 
     // Register flow conditions
     this._registerFlowConditions();
+    
+    // Register flow actions
+    this._registerFlowActions();
 
     // Initial update for all devices
     setTimeout(this.updatePrices.bind(this), 2000);
+  }
+  
+  /**
+   * Register flow actions
+   */
+  _registerFlowActions() {
+    // Get current hour cheapest rank
+    this.homey.flow.getActionCard('get_current_hour_in_cheapest')
+      .registerRunListener(async (args, state) => {
+        const { device } = args;
+        const rank = device.getCapabilityValue('current_hour_in_cheapest');
+        return { rank };
+      });
   }
 
   /**
@@ -46,6 +62,21 @@ module.exports = class PstrykPriceDriver extends Homey.Driver {
       .registerRunListener(async (args, state) => {
         const { device } = args;
         return device.getCapabilityValue('minimise_usage_now');
+      });
+      
+    // Is current hour among cheapest
+    this.homey.flow.getConditionCard('is_current_hour_in_cheapest')
+      .registerRunListener(async (args, state) => {
+        const { device, rank } = args;
+        const currentRank = device.getCapabilityValue('current_hour_in_cheapest');
+        
+        switch(rank) {
+          case 'any': return currentRank > 0;
+          case 'cheapest': return currentRank === 1;
+          case 'second': return currentRank === 2;
+          case 'third': return currentRank === 3;
+          default: return false;
+        }
       });
       
     // Current price comparison

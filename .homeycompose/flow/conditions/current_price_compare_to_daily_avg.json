@@ -1,0 +1,43 @@
+{
+    "id": "current_price_compare_to_daily_avg",
+    "title": {
+        "en": "Current price compared to daily average"
+    },
+    "titleFormatted": {
+        "en": "Current price is [[operator]] than daily average"
+    },
+    "args": [
+        {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=pstryk_price"
+        },
+        {
+            "name": "operator",
+            "type": "dropdown",
+            "label": {
+                "en": "Comparison"
+            },
+            "values": [
+                {
+                    "id": "gt",
+                    "label": {
+                        "en": "greater"
+                    }
+                },
+                {
+                    "id": "lt",
+                    "label": {
+                        "en": "lower"
+                    }
+                },
+                {
+                    "id": "eq",
+                    "label": {
+                        "en": "equal"
+                    }
+                }
+            ]
+        }
+    ]
+}

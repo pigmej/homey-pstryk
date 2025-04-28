@@ -1,0 +1,16 @@
+{
+    "id": "is_minimise_period_active",
+    "title": {
+        "en": "Is minimise usage period active"
+    },
+    "titleFormatted": {
+        "en": "Current time is in a minimise usage period"
+    },
+    "args": [
+        {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=pstryk_price"
+        }
+    ]
+}

@@ -1,0 +1,49 @@
+{
+  "id": "is_current_hour_in_cheapest",
+  "title": {
+    "en": "Current hour is among cheapest"
+  },
+  "titleFormatted": {
+    "en": "Current hour is [[rank]] among cheapest"
+  },
+  "args": [
+    {
+      "name": "device",
+      "type": "device",
+      "filter": "driver_id=pstryk_price"
+    },
+    {
+      "name": "rank",
+      "type": "dropdown",
+      "label": {
+        "en": "Rank"
+      },
+      "values": [
+        {
+          "id": "any",
+          "label": {
+            "en": "among 3 cheapest"
+          }
+        },
+        {
+          "id": "cheapest",
+          "label": {
+            "en": "the cheapest"
+          }
+        },
+        {
+          "id": "second",
+          "label": {
+            "en": "the 2nd cheapest"
+          }
+        },
+        {
+          "id": "third",
+          "label": {
+            "en": "the 3rd cheapest"
+          }
+        }
+      ]
+    }
+  ]
+}

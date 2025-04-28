@@ -1,0 +1,23 @@
+{
+  "id": "current_hour_in_cheapest_changed",
+  "title": {
+    "en": "Current hour in cheapest status changed"
+  },
+  "tokens": [
+    {
+      "name": "current_hour_in_cheapest",
+      "type": "number",
+      "title": {
+        "en": "Cheapest rank"
+      },
+      "example": 1
+    }
+  ],
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=pstryk_price"
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "id": "get_current_hour_in_cheapest",
+  "title": {
+    "en": "Get current hour cheapest rank"
+  },
+  "titleFormatted": {
+    "en": "Get current hour's rank among cheapest hours"
+  },
+  "args": [
+    {
+      "name": "device",
+      "type": "device",
+      "filter": "driver_id=pstryk_price"
+    }
+  ],
+  "tokens": [
+    {
+      "name": "rank",
+      "type": "number",
+      "title": {
+        "en": "Rank"
+      },
+      "example": 1
+    }
+  ]
+}
