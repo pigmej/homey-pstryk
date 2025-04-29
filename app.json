@@ -23,9 +23,101 @@
   "flow": {
     "triggers": [
       {
+        "id": "current_hour_in_cheapest_12h_changed",
+        "title": {
+          "en": "Current hour in cheapest status changed (12h window)"
+        },
+        "tokens": [
+          {
+            "name": "current_hour_in_cheapest_12h",
+            "type": "number",
+            "title": {
+              "en": "Cheapest rank"
+            },
+            "example": 1
+          }
+        ],
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=pstryk_price"
+          }
+        ]
+      },
+      {
+        "id": "current_hour_in_cheapest_24h_changed",
+        "title": {
+          "en": "Current hour in cheapest status changed (24h window)"
+        },
+        "tokens": [
+          {
+            "name": "current_hour_in_cheapest_24h",
+            "type": "number",
+            "title": {
+              "en": "Cheapest rank"
+            },
+            "example": 1
+          }
+        ],
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=pstryk_price"
+          }
+        ]
+      },
+      {
+        "id": "current_hour_in_cheapest_36h_changed",
+        "title": {
+          "en": "Current hour in cheapest status changed (36h window)"
+        },
+        "tokens": [
+          {
+            "name": "current_hour_in_cheapest_36h",
+            "type": "number",
+            "title": {
+              "en": "Cheapest rank"
+            },
+            "example": 1
+          }
+        ],
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=pstryk_price"
+          }
+        ]
+      },
+      {
+        "id": "current_hour_in_cheapest_4h_changed",
+        "title": {
+          "en": "Current hour in cheapest status changed (4h window)"
+        },
+        "tokens": [
+          {
+            "name": "current_hour_in_cheapest_4h",
+            "type": "number",
+            "title": {
+              "en": "Cheapest rank"
+            },
+            "example": 1
+          }
+        ],
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=pstryk_price"
+          }
+        ]
+      },
+      {
         "id": "current_hour_in_cheapest_changed",
         "title": {
-          "en": "Current hour in cheapest status changed"
+          "en": "Current hour in cheapest status changed (8h window)"
         },
         "tokens": [
           {
@@ -500,10 +592,206 @@
       {
         "id": "is_current_hour_in_cheapest",
         "title": {
-          "en": "Current hour is among cheapest"
+          "en": "Current hour is among cheapest (8h window)"
         },
         "titleFormatted": {
-          "en": "Current hour is [[rank]] among cheapest"
+          "en": "Current hour is [[rank]] among cheapest hours in 8-hour window"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=pstryk_price"
+          },
+          {
+            "name": "rank",
+            "type": "dropdown",
+            "label": {
+              "en": "Rank"
+            },
+            "values": [
+              {
+                "id": "any",
+                "label": {
+                  "en": "among 3 cheapest"
+                }
+              },
+              {
+                "id": "cheapest",
+                "label": {
+                  "en": "the cheapest"
+                }
+              },
+              {
+                "id": "second",
+                "label": {
+                  "en": "the 2nd cheapest"
+                }
+              },
+              {
+                "id": "third",
+                "label": {
+                  "en": "the 3rd cheapest"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "is_current_hour_in_cheapest_12h",
+        "title": {
+          "en": "Current hour is among cheapest (12h window)"
+        },
+        "titleFormatted": {
+          "en": "Current hour is [[rank]] among cheapest hours in 12-hour window"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=pstryk_price"
+          },
+          {
+            "name": "rank",
+            "type": "dropdown",
+            "label": {
+              "en": "Rank"
+            },
+            "values": [
+              {
+                "id": "any",
+                "label": {
+                  "en": "among 3 cheapest"
+                }
+              },
+              {
+                "id": "cheapest",
+                "label": {
+                  "en": "the cheapest"
+                }
+              },
+              {
+                "id": "second",
+                "label": {
+                  "en": "the 2nd cheapest"
+                }
+              },
+              {
+                "id": "third",
+                "label": {
+                  "en": "the 3rd cheapest"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "is_current_hour_in_cheapest_24h",
+        "title": {
+          "en": "Current hour is among cheapest (24h window)"
+        },
+        "titleFormatted": {
+          "en": "Current hour is [[rank]] among cheapest hours in 24-hour window"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=pstryk_price"
+          },
+          {
+            "name": "rank",
+            "type": "dropdown",
+            "label": {
+              "en": "Rank"
+            },
+            "values": [
+              {
+                "id": "any",
+                "label": {
+                  "en": "among 3 cheapest"
+                }
+              },
+              {
+                "id": "cheapest",
+                "label": {
+                  "en": "the cheapest"
+                }
+              },
+              {
+                "id": "second",
+                "label": {
+                  "en": "the 2nd cheapest"
+                }
+              },
+              {
+                "id": "third",
+                "label": {
+                  "en": "the 3rd cheapest"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "is_current_hour_in_cheapest_36h",
+        "title": {
+          "en": "Current hour is among cheapest (36h window)"
+        },
+        "titleFormatted": {
+          "en": "Current hour is [[rank]] among cheapest hours in 36-hour window"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=pstryk_price"
+          },
+          {
+            "name": "rank",
+            "type": "dropdown",
+            "label": {
+              "en": "Rank"
+            },
+            "values": [
+              {
+                "id": "any",
+                "label": {
+                  "en": "among 3 cheapest"
+                }
+              },
+              {
+                "id": "cheapest",
+                "label": {
+                  "en": "the cheapest"
+                }
+              },
+              {
+                "id": "second",
+                "label": {
+                  "en": "the 2nd cheapest"
+                }
+              },
+              {
+                "id": "third",
+                "label": {
+                  "en": "the 3rd cheapest"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "is_current_hour_in_cheapest_4h",
+        "title": {
+          "en": "Current hour is among cheapest (4h window)"
+        },
+        "titleFormatted": {
+          "en": "Current hour is [[rank]] among cheapest hours in 4-hour window"
         },
         "args": [
           {
@@ -631,10 +919,114 @@
       {
         "id": "get_current_hour_in_cheapest",
         "title": {
-          "en": "Get current hour cheapest rank"
+          "en": "Get current hour cheapest rank (8h window)"
         },
         "titleFormatted": {
-          "en": "Get current hour's rank among cheapest hours"
+          "en": "Get current hour's rank among cheapest hours in 8-hour window"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=pstryk_price"
+          }
+        ],
+        "tokens": [
+          {
+            "name": "rank",
+            "type": "number",
+            "title": {
+              "en": "Rank"
+            },
+            "example": 1
+          }
+        ]
+      },
+      {
+        "id": "get_current_hour_in_cheapest_12h",
+        "title": {
+          "en": "Get current hour cheapest rank (12h window)"
+        },
+        "titleFormatted": {
+          "en": "Get current hour's rank among cheapest hours in 12-hour window"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=pstryk_price"
+          }
+        ],
+        "tokens": [
+          {
+            "name": "rank",
+            "type": "number",
+            "title": {
+              "en": "Rank"
+            },
+            "example": 1
+          }
+        ]
+      },
+      {
+        "id": "get_current_hour_in_cheapest_24h",
+        "title": {
+          "en": "Get current hour cheapest rank (24h window)"
+        },
+        "titleFormatted": {
+          "en": "Get current hour's rank among cheapest hours in 24-hour window"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=pstryk_price"
+          }
+        ],
+        "tokens": [
+          {
+            "name": "rank",
+            "type": "number",
+            "title": {
+              "en": "Rank"
+            },
+            "example": 1
+          }
+        ]
+      },
+      {
+        "id": "get_current_hour_in_cheapest_36h",
+        "title": {
+          "en": "Get current hour cheapest rank (36h window)"
+        },
+        "titleFormatted": {
+          "en": "Get current hour's rank among cheapest hours in 36-hour window"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=pstryk_price"
+          }
+        ],
+        "tokens": [
+          {
+            "name": "rank",
+            "type": "number",
+            "title": {
+              "en": "Rank"
+            },
+            "example": 1
+          }
+        ]
+      },
+      {
+        "id": "get_current_hour_in_cheapest_4h",
+        "title": {
+          "en": "Get current hour cheapest rank (4h window)"
+        },
+        "titleFormatted": {
+          "en": "Get current hour's rank among cheapest hours in 4-hour window"
         },
         "args": [
           {
@@ -1006,14 +1398,214 @@
     },
     "current_hour_in_cheapest": {
       "title": {
-        "en": "Current hour in cheapest"
+        "en": "Current hour in cheapest (8h window)"
       },
       "desc": {
-        "en": "Indicates if current hour is among the 3 cheapest hours (0=not cheapest, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest)"
+        "en": "Indicates if current hour is among the 3 cheapest hours in the next 8 hour window (0=not cheapest, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest)"
       },
       "tokens": [
         {
           "name": "current_hour_in_cheapest",
+          "type": "number",
+          "title": {
+            "en": "cheapest rank"
+          },
+          "example": 1
+        }
+      ],
+      "type": "number",
+      "min": 0,
+      "max": 3,
+      "getable": true,
+      "setable": false,
+      "insights": true,
+      "uiComponent": "sensor",
+      "color": {
+        "type": "continuous",
+        "value": {
+          "minimum": 0,
+          "maximum": 3,
+          "stops": [
+            {
+              "value": 0,
+              "color": "#808080"
+            },
+            {
+              "value": 1,
+              "color": "#0cce6b"
+            },
+            {
+              "value": 2,
+              "color": "#43c3ff"
+            },
+            {
+              "value": 3,
+              "color": "#ffd00a"
+            }
+          ]
+        }
+      }
+    },
+    "current_hour_in_cheapest_12h": {
+      "title": {
+        "en": "Current hour in cheapest (12h window)"
+      },
+      "desc": {
+        "en": "Indicates if current hour is among the 3 cheapest hours in the next 12 hour window (0=not cheapest, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest)"
+      },
+      "tokens": [
+        {
+          "name": "current_hour_in_cheapest_12h",
+          "type": "number",
+          "title": {
+            "en": "cheapest rank"
+          },
+          "example": 1
+        }
+      ],
+      "type": "number",
+      "min": 0,
+      "max": 3,
+      "getable": true,
+      "setable": false,
+      "insights": true,
+      "uiComponent": "sensor",
+      "color": {
+        "type": "continuous",
+        "value": {
+          "minimum": 0,
+          "maximum": 3,
+          "stops": [
+            {
+              "value": 0,
+              "color": "#808080"
+            },
+            {
+              "value": 1,
+              "color": "#0cce6b"
+            },
+            {
+              "value": 2,
+              "color": "#43c3ff"
+            },
+            {
+              "value": 3,
+              "color": "#ffd00a"
+            }
+          ]
+        }
+      }
+    },
+    "current_hour_in_cheapest_24h": {
+      "title": {
+        "en": "Current hour in cheapest (24h window)"
+      },
+      "desc": {
+        "en": "Indicates if current hour is among the 3 cheapest hours in the next 24 hour window (0=not cheapest, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest)"
+      },
+      "tokens": [
+        {
+          "name": "current_hour_in_cheapest_24h",
+          "type": "number",
+          "title": {
+            "en": "cheapest rank"
+          },
+          "example": 1
+        }
+      ],
+      "type": "number",
+      "min": 0,
+      "max": 3,
+      "getable": true,
+      "setable": false,
+      "insights": true,
+      "uiComponent": "sensor",
+      "color": {
+        "type": "continuous",
+        "value": {
+          "minimum": 0,
+          "maximum": 3,
+          "stops": [
+            {
+              "value": 0,
+              "color": "#808080"
+            },
+            {
+              "value": 1,
+              "color": "#0cce6b"
+            },
+            {
+              "value": 2,
+              "color": "#43c3ff"
+            },
+            {
+              "value": 3,
+              "color": "#ffd00a"
+            }
+          ]
+        }
+      }
+    },
+    "current_hour_in_cheapest_36h": {
+      "title": {
+        "en": "Current hour in cheapest (36h window)"
+      },
+      "desc": {
+        "en": "Indicates if current hour is among the 3 cheapest hours in the next 36 hour window (0=not cheapest, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest)"
+      },
+      "tokens": [
+        {
+          "name": "current_hour_in_cheapest_36h",
+          "type": "number",
+          "title": {
+            "en": "cheapest rank"
+          },
+          "example": 1
+        }
+      ],
+      "type": "number",
+      "min": 0,
+      "max": 3,
+      "getable": true,
+      "setable": false,
+      "insights": true,
+      "uiComponent": "sensor",
+      "color": {
+        "type": "continuous",
+        "value": {
+          "minimum": 0,
+          "maximum": 3,
+          "stops": [
+            {
+              "value": 0,
+              "color": "#808080"
+            },
+            {
+              "value": 1,
+              "color": "#0cce6b"
+            },
+            {
+              "value": 2,
+              "color": "#43c3ff"
+            },
+            {
+              "value": 3,
+              "color": "#ffd00a"
+            }
+          ]
+        }
+      }
+    },
+    "current_hour_in_cheapest_4h": {
+      "title": {
+        "en": "Current hour in cheapest (4h window)"
+      },
+      "desc": {
+        "en": "Indicates if current hour is among the 3 cheapest hours in the next 4 hour window (0=not cheapest, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest)"
+      },
+      "tokens": [
+        {
+          "name": "current_hour_in_cheapest_4h",
           "type": "number",
           "title": {
             "en": "cheapest rank"
