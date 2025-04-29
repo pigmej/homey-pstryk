@@ -1,11 +1,11 @@
 {
-  "id": "current_hour_in_cheapest_changed",
+  "id": "current_hour_in_cheapest_36h_changed",
   "title": {
-    "en": "Current hour in cheapest status changed (8h window)"
+    "en": "Current hour in cheapest status changed (36h window)"
   },
   "tokens": [
     {
-      "name": "current_hour_in_cheapest",
+      "name": "current_hour_in_cheapest_36h",
       "type": "number",
       "title": {
         "en": "Cheapest rank"

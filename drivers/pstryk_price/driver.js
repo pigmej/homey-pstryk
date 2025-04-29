@@ -23,11 +23,43 @@ module.exports = class PstrykPriceDriver extends Homey.Driver {
    * Register flow actions
    */
   _registerFlowActions() {
-    // Get current hour cheapest rank
+    // Get current hour cheapest rank (8h window)
     this.homey.flow.getActionCard('get_current_hour_in_cheapest')
       .registerRunListener(async (args, state) => {
         const { device } = args;
         const rank = device.getCapabilityValue('current_hour_in_cheapest');
+        return { rank };
+      });
+      
+    // Get current hour cheapest rank (4h window)
+    this.homey.flow.getActionCard('get_current_hour_in_cheapest_4h')
+      .registerRunListener(async (args, state) => {
+        const { device } = args;
+        const rank = device.getCapabilityValue('current_hour_in_cheapest_4h');
+        return { rank };
+      });
+      
+    // Get current hour cheapest rank (12h window)
+    this.homey.flow.getActionCard('get_current_hour_in_cheapest_12h')
+      .registerRunListener(async (args, state) => {
+        const { device } = args;
+        const rank = device.getCapabilityValue('current_hour_in_cheapest_12h');
+        return { rank };
+      });
+      
+    // Get current hour cheapest rank (24h window)
+    this.homey.flow.getActionCard('get_current_hour_in_cheapest_24h')
+      .registerRunListener(async (args, state) => {
+        const { device } = args;
+        const rank = device.getCapabilityValue('current_hour_in_cheapest_24h');
+        return { rank };
+      });
+      
+    // Get current hour cheapest rank (36h window)
+    this.homey.flow.getActionCard('get_current_hour_in_cheapest_36h')
+      .registerRunListener(async (args, state) => {
+        const { device } = args;
+        const rank = device.getCapabilityValue('current_hour_in_cheapest_36h');
         return { rank };
       });
   }
@@ -64,11 +96,71 @@ module.exports = class PstrykPriceDriver extends Homey.Driver {
         return device.getCapabilityValue('minimise_usage_now');
       });
       
-    // Is current hour among cheapest
+    // Is current hour among cheapest (8h window)
     this.homey.flow.getConditionCard('is_current_hour_in_cheapest')
       .registerRunListener(async (args, state) => {
         const { device, rank } = args;
         const currentRank = device.getCapabilityValue('current_hour_in_cheapest');
+        
+        switch(rank) {
+          case 'any': return currentRank > 0;
+          case 'cheapest': return currentRank === 1;
+          case 'second': return currentRank === 2;
+          case 'third': return currentRank === 3;
+          default: return false;
+        }
+      });
+      
+    // Is current hour among cheapest (4h window)
+    this.homey.flow.getConditionCard('is_current_hour_in_cheapest_4h')
+      .registerRunListener(async (args, state) => {
+        const { device, rank } = args;
+        const currentRank = device.getCapabilityValue('current_hour_in_cheapest_4h');
+        
+        switch(rank) {
+          case 'any': return currentRank > 0;
+          case 'cheapest': return currentRank === 1;
+          case 'second': return currentRank === 2;
+          case 'third': return currentRank === 3;
+          default: return false;
+        }
+      });
+      
+    // Is current hour among cheapest (12h window)
+    this.homey.flow.getConditionCard('is_current_hour_in_cheapest_12h')
+      .registerRunListener(async (args, state) => {
+        const { device, rank } = args;
+        const currentRank = device.getCapabilityValue('current_hour_in_cheapest_12h');
+        
+        switch(rank) {
+          case 'any': return currentRank > 0;
+          case 'cheapest': return currentRank === 1;
+          case 'second': return currentRank === 2;
+          case 'third': return currentRank === 3;
+          default: return false;
+        }
+      });
+      
+    // Is current hour among cheapest (24h window)
+    this.homey.flow.getConditionCard('is_current_hour_in_cheapest_24h')
+      .registerRunListener(async (args, state) => {
+        const { device, rank } = args;
+        const currentRank = device.getCapabilityValue('current_hour_in_cheapest_24h');
+        
+        switch(rank) {
+          case 'any': return currentRank > 0;
+          case 'cheapest': return currentRank === 1;
+          case 'second': return currentRank === 2;
+          case 'third': return currentRank === 3;
+          default: return false;
+        }
+      });
+      
+    // Is current hour among cheapest (36h window)
+    this.homey.flow.getConditionCard('is_current_hour_in_cheapest_36h')
+      .registerRunListener(async (args, state) => {
+        const { device, rank } = args;
+        const currentRank = device.getCapabilityValue('current_hour_in_cheapest_36h');
         
         switch(rank) {
           case 'any': return currentRank > 0;

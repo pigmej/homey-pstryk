@@ -27,6 +27,10 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
     await this.addCapability("minimise_usage_now");
     await this.addCapability("daily_average_price");
     await this.addCapability("current_hour_in_cheapest");
+    await this.addCapability("current_hour_in_cheapest_4h");
+    await this.addCapability("current_hour_in_cheapest_12h");
+    await this.addCapability("current_hour_in_cheapest_24h");
+    await this.addCapability("current_hour_in_cheapest_36h");
 
     this._hasRefreshedToday = false;
     this._previousBlocks = null;
@@ -340,8 +344,16 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       this._lastPriceUpdate = Date.now();
 
       // Get prices for next 24 hours and cheapest times
-      const { currentPriceInfo, cheapestHours, cheapestHoursValues, currentHourInCheapestValue } =
-        await this.getCurrentPrice(apiKey);
+      const { 
+        currentPriceInfo, 
+        cheapestHours, 
+        cheapestHoursValues, 
+        currentHourInCheapestValue,
+        currentHourInCheapest4hValue,
+        currentHourInCheapest12hValue,
+        currentHourInCheapest24hValue,
+        currentHourInCheapest36hValue
+      } = await this.getCurrentPrice(apiKey);
 
       // Get daily average price
       const dailyAvgPrice = await this.getDailyAveragePrice(apiKey);
@@ -364,11 +376,38 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
         "currently_expensive",
         currentPriceInfo.is_expensive,
       );
-      // Log the value to help with debugging
-      this.log(`Setting current_hour_in_cheapest capability to: ${currentHourInCheapestValue}`);
+      // Log the values to help with debugging
+      this.log(`Setting current_hour_in_cheapest capabilities:`);
+      this.log(`  8h window: ${currentHourInCheapestValue}`);
+      this.log(`  4h window: ${currentHourInCheapest4hValue}`);
+      this.log(`  12h window: ${currentHourInCheapest12hValue}`);
+      this.log(`  24h window: ${currentHourInCheapest24hValue}`);
+      this.log(`  36h window: ${currentHourInCheapest36hValue}`);
+      
+      // Set all the capability values
       await this.setCapabilityValue(
         "current_hour_in_cheapest",
         currentHourInCheapestValue,
+      );
+      
+      await this.setCapabilityValue(
+        "current_hour_in_cheapest_4h",
+        currentHourInCheapest4hValue,
+      );
+      
+      await this.setCapabilityValue(
+        "current_hour_in_cheapest_12h",
+        currentHourInCheapest12hValue,
+      );
+      
+      await this.setCapabilityValue(
+        "current_hour_in_cheapest_24h",
+        currentHourInCheapest24hValue,
+      );
+      
+      await this.setCapabilityValue(
+        "current_hour_in_cheapest_36h",
+        currentHourInCheapest36hValue,
       );
 
       this.log(currentPriceInfo, cheapestHours, cheapestHoursValues);
@@ -505,42 +544,76 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       frame: currentFrame || null,
     };
     
-    // Check if the current hour is among the 3 cheapest hours
-    let currentHourInCheapestValue = 0;
-    if (currentFrame) {
-      // Get all valid frames for today and sort by price
-      const now = new Date();
-      const endOfDay = new Date(now);
-      endOfDay.setHours(23, 59, 59, 999);
+    // Helper function to calculate cheapest hour rank for a given window size
+    const calculateCheapestHourRank = (hourWindow) => {
+      let rankValue = 0;
       
-      const todayFrames = validFrames.filter(frame => {
-        const frameDate = new Date(frame.start);
-        return frameDate.getDate() === now.getDate() && 
-               frameDate.getMonth() === now.getMonth() && 
-               frameDate.getFullYear() === now.getFullYear();
-      });
-      
-      // Sort frames by price (cheapest first)
-      const sortedFrames = [...todayFrames].sort((a, b) => a.price_gross - b.price_gross);
-      
-      // Find current frame's position in the sorted list
-      if (sortedFrames.length > 0) {
-        const currentFrameIndex = sortedFrames.findIndex(
-          frame => frame.start === currentFrame.start
-        );
+      if (currentFrame) {
+        const now = new Date();
         
-        if (currentFrameIndex === 0) {
-          // Current hour is the cheapest
-          currentHourInCheapestValue = 1;
-        } else if (currentFrameIndex === 1) {
-          // Current hour is the 2nd cheapest
-          currentHourInCheapestValue = 2;
-        } else if (currentFrameIndex === 2) {
-          // Current hour is the 3rd cheapest
-          currentHourInCheapestValue = 3;
+        // Create window starting from current hour
+        const windowEnd = new Date(now);
+        windowEnd.setHours(now.getHours() + hourWindow);
+        
+        // Get all frames within the window (including the current hour)
+        const windowFrames = validFrames.filter(frame => {
+          const frameStart = new Date(frame.start);
+          // Include current hour and next hours up to window size
+          return frameStart >= now && frameStart < windowEnd;
+        });
+        
+        // Add current hour to window frames if not already included
+        let framesWithCurrentHour = [...windowFrames];
+        if (!framesWithCurrentHour.some(frame => frame.start === currentFrame.start)) {
+          framesWithCurrentHour.push(currentFrame);
+        }
+        
+        this.log(`Found ${framesWithCurrentHour.length} frames in ${hourWindow}-hour window`);
+        
+        // Sort frames by price (cheapest first)
+        const sortedFrames = framesWithCurrentHour.sort((a, b) => a.price_gross - b.price_gross);
+        
+        // Get the prices for logging
+        const frameDetails = sortedFrames.map(frame => {
+          return {
+            start: new Date(frame.start).toLocaleTimeString(),
+            price: frame.price_gross,
+            isCurrent: frame.start === currentFrame.start
+          };
+        });
+        
+        this.log(`Frames in ${hourWindow}-hour window (sorted by price):`, JSON.stringify(frameDetails, null, 2));
+        
+        // Find current frame's position in the sorted list
+        if (sortedFrames.length > 0) {
+          const currentFrameIndex = sortedFrames.findIndex(
+            frame => frame.start === currentFrame.start
+          );
+          
+          this.log(`Current frame position in ${hourWindow}-hour window sorted list: ${currentFrameIndex}`);
+          
+          if (currentFrameIndex === 0) {
+            // Current hour is the cheapest in the window
+            rankValue = 1;
+          } else if (currentFrameIndex === 1) {
+            // Current hour is the 2nd cheapest in the window
+            rankValue = 2;
+          } else if (currentFrameIndex === 2) {
+            // Current hour is the 3rd cheapest in the window
+            rankValue = 3;
+          }
         }
       }
-    }
+      
+      return rankValue;
+    };
+    
+    // Calculate rank for different time windows
+    let currentHourInCheapestValue = calculateCheapestHourRank(8);
+    let currentHourInCheapest4hValue = calculateCheapestHourRank(4);
+    let currentHourInCheapest12hValue = calculateCheapestHourRank(12);
+    let currentHourInCheapest24hValue = calculateCheapestHourRank(24);
+    let currentHourInCheapest36hValue = calculateCheapestHourRank(36);
 
     // Find optimal 2+ hour periods for limiting and maximizing electricity usage
     const { cheapBlocks, expensiveBlocks } =
@@ -568,6 +641,10 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       cheapBlocks,
       expensiveBlocks,
       currentHourInCheapestValue,
+      currentHourInCheapest4hValue,
+      currentHourInCheapest12hValue,
+      currentHourInCheapest24hValue,
+      currentHourInCheapest36hValue,
     };
   }
 

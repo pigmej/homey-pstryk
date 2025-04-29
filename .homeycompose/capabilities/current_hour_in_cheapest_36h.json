@@ -1,13 +1,13 @@
 {
     "title": {
-        "en": "Current hour in cheapest (8h window)"
+        "en": "Current hour in cheapest (36h window)"
     },
     "desc": {
-        "en": "Indicates if current hour is among the 3 cheapest hours in the next 8 hour window (0=not cheapest, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest)"
+        "en": "Indicates if current hour is among the 3 cheapest hours in the next 36 hour window (0=not cheapest, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest)"
     },
     "tokens": [
         {
-            "name": "current_hour_in_cheapest",
+            "name": "current_hour_in_cheapest_36h",
             "type": "number",
             "title": {
                 "en": "cheapest rank"

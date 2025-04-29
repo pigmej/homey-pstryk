@@ -1,10 +1,10 @@
 {
-  "id": "get_current_hour_in_cheapest",
+  "id": "get_current_hour_in_cheapest_36h",
   "title": {
-    "en": "Get current hour cheapest rank (8h window)"
+    "en": "Get current hour cheapest rank (36h window)"
   },
   "titleFormatted": {
-    "en": "Get current hour's rank among cheapest hours in 8-hour window"
+    "en": "Get current hour's rank among cheapest hours in 36-hour window"
   },
   "args": [
     {

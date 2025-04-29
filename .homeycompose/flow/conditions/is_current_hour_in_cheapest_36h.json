@@ -1,10 +1,10 @@
 {
-  "id": "is_current_hour_in_cheapest",
+  "id": "is_current_hour_in_cheapest_36h",
   "title": {
-    "en": "Current hour is among cheapest (8h window)"
+    "en": "Current hour is among cheapest (36h window)"
   },
   "titleFormatted": {
-    "en": "Current hour is [[rank]] among cheapest hours in 8-hour window"
+    "en": "Current hour is [[rank]] among cheapest hours in 36-hour window"
   },
   "args": [
     {
