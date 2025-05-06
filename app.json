@@ -1235,6 +1235,22 @@
             "en": "Tomorrow"
           },
           "value": "Tomorrow"
+        },
+        {
+          "id": "priceDiffThreshold",
+          "type": "number",
+          "label": {
+            "en": "Price Difference Threshold (%)"
+          },
+          "value": 10,
+          "min": 1,
+          "max": 50,
+          "units": {
+            "en": "%"
+          },
+          "hint": {
+            "en": "Maximum price difference (as a percentage) allowed when grouping hours for maximize/minimize periods"
+          }
         }
       ]
     }
@@ -1930,25 +1946,6 @@
       "chartType": "stepLine",
       "decimals": 1,
       "icon": "/assets/measure_voltage.svg"
-    },
-    "meter_power": {
-      "type": "number",
-      "title": {
-        "en": "Energy Meter"
-      },
-      "getable": true,
-      "setable": false,
-      "units": {
-        "en": "kWh"
-      },
-      "min": 0,
-      "max": 1000000,
-      "insights": true,
-      "desc": {
-        "en": "Energy usage in kilowatt-hour"
-      },
-      "chartType": "stepLine",
-      "decimals": 3
     },
     "minimise_usage_during": {
       "title": {

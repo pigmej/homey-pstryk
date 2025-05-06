@@ -85,10 +85,15 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
 
     if (
       changedKeys.includes("todayLabel") ||
-      changedKeys.includes("tomorrowLabel")
+      changedKeys.includes("tomorrowLabel") ||
+      changedKeys.includes("priceDiffThreshold")
     ) {
-      this.log("Date labels changed, updating periods");
-      this.updatePrices(); // Refresh displayed periods with new labels
+      if (changedKeys.includes("priceDiffThreshold")) {
+        this.log("Price difference threshold changed to", newSettings.priceDiffThreshold + "%");
+      } else {
+        this.log("Date labels changed, updating periods");
+      }
+      this.updatePrices(); // Refresh displayed periods with new settings
     }
 
     return Promise.resolve();
@@ -738,11 +743,15 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
 
           // If no exact price match found, look for nearby frames with small price difference
           if (!bestFrame) {
+            // Get configurable price difference threshold (default to 10% if not set)
+            const priceDiffThreshold = this.settings.priceDiffThreshold !== undefined ? 
+              this.settings.priceDiffThreshold / 100 : 0.10;
+            
             adjacentFrames.forEach(frame => {
               const priceDiff = Math.abs(frame.price_gross - block.avgPrice);
               const timeDiff = Math.abs(new Date(frame.start) - lastFrameEnd);
               
-              if (priceDiff <= block.avgPrice * 0.10 && timeDiff < bestTimeDiff) {
+              if (priceDiff <= block.avgPrice * priceDiffThreshold && timeDiff < bestTimeDiff) {
                 bestFrame = frame;
                 bestTimeDiff = timeDiff;
               }
@@ -908,7 +917,9 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
     this.checkCurrentUsagePeriod();
 
     // Log the results
-    this.log("--- OPTIMAL ELECTRICITY USAGE PERIODS ---");
+    const priceDiffThreshold = this.settings.priceDiffThreshold !== undefined ? 
+      this.settings.priceDiffThreshold : 10;
+    this.log(`--- OPTIMAL ELECTRICITY USAGE PERIODS (Price Threshold: ${priceDiffThreshold}%) ---`);
 
     if (formattedCheapBlocks.length > 0) {
       this.log("MAXIMIZE USAGE during these cheap periods:");
@@ -967,7 +978,14 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       const priceDiff = Math.abs(currentBlock.avgPrice - nextBlock.avgPrice);
       const samePriceGroup = priceDiff < 0.0001; // Consider same price if difference < 0.01%
 
-      if (timeGap <= 7200000 && (priceDiff < currentBlock.avgPrice * 0.05 || samePriceGroup)) {
+      // Get configurable price difference threshold (default to 10% if not set)
+      const priceDiffThreshold = this.settings.priceDiffThreshold !== undefined ? 
+        this.settings.priceDiffThreshold / 100 : 0.10;
+      
+      // Use half the threshold for merging blocks (more conservative)
+      const mergeThreshold = priceDiffThreshold / 2;
+      
+      if (timeGap <= 7200000 && (priceDiff < currentBlock.avgPrice * mergeThreshold || samePriceGroup)) {
         // Merge the blocks
         currentBlock.endTime = new Date(Math.max(currentEnd, nextBlock.endTime));
         currentBlock.durationHours = Math.round(
