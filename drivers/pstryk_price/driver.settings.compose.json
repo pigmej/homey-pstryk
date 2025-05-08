@@ -28,5 +28,12 @@
         "max": 50,
         "units": { "en": "%" },
         "hint": { "en": "Maximum price difference (as a percentage) allowed when grouping hours for maximize/minimize periods" }
+    },
+    {
+        "id": "debugMode",
+        "type": "checkbox",
+        "label": { "en": "Debug Mode" },
+        "value": false,
+        "hint": { "en": "Enable additional debug logging" }
     }
 ]

@@ -1,49 +1,55 @@
 {
-  "id": "is_current_hour_in_cheapest_36h",
-  "title": {
-    "en": "Current hour is among cheapest (36h window)"
-  },
-  "titleFormatted": {
-    "en": "Current hour is [[rank]] among cheapest hours in 36-hour window"
-  },
-  "args": [
-    {
-      "name": "device",
-      "type": "device",
-      "filter": "driver_id=pstryk_price"
+    "id": "is_current_hour_in_cheapest_36h",
+    "title": {
+        "en": "Current hour is among cheapest (36h window)"
     },
-    {
-      "name": "rank",
-      "type": "dropdown",
-      "label": {
-        "en": "Rank"
-      },
-      "values": [
+    "titleFormatted": {
+        "en": "Current hour is [[rank]] among cheapest hours in 36-hour window"
+    },
+    "args": [
         {
-          "id": "any",
-          "label": {
-            "en": "among 3 cheapest"
-          }
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=pstryk_price"
         },
         {
-          "id": "cheapest",
-          "label": {
-            "en": "the cheapest"
-          }
-        },
-        {
-          "id": "second",
-          "label": {
-            "en": "the 2nd cheapest"
-          }
-        },
-        {
-          "id": "third",
-          "label": {
-            "en": "the 3rd cheapest"
-          }
+            "name": "rank",
+            "type": "dropdown",
+            "label": {
+                "en": "Rank"
+            },
+            "values": [
+                {
+                    "id": "any3",
+                    "label": {
+                        "en": "among 3 cheapest"
+                    }
+                },
+                {
+                    "id": "any2",
+                    "label": {
+                        "en": "among 2 cheapest"
+                    }
+                },
+                {
+                    "id": "cheapest",
+                    "label": {
+                        "en": "the cheapest"
+                    }
+                },
+                {
+                    "id": "second",
+                    "label": {
+                        "en": "the 2nd cheapest"
+                    }
+                },
+                {
+                    "id": "third",
+                    "label": {
+                        "en": "the 3rd cheapest"
+                    }
+                }
+            ]
         }
-      ]
-    }
-  ]
+    ]
 }

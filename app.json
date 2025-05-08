@@ -611,9 +611,15 @@
             },
             "values": [
               {
-                "id": "any",
+                "id": "any3",
                 "label": {
                   "en": "among 3 cheapest"
+                }
+              },
+              {
+                "id": "any2",
+                "label": {
+                  "en": "among 2 cheapest"
                 }
               },
               {
@@ -660,9 +666,15 @@
             },
             "values": [
               {
-                "id": "any",
+                "id": "any3",
                 "label": {
                   "en": "among 3 cheapest"
+                }
+              },
+              {
+                "id": "any2",
+                "label": {
+                  "en": "among 2 cheapest"
                 }
               },
               {
@@ -709,9 +721,15 @@
             },
             "values": [
               {
-                "id": "any",
+                "id": "any3",
                 "label": {
                   "en": "among 3 cheapest"
+                }
+              },
+              {
+                "id": "any2",
+                "label": {
+                  "en": "among 2 cheapest"
                 }
               },
               {
@@ -758,9 +776,15 @@
             },
             "values": [
               {
-                "id": "any",
+                "id": "any3",
                 "label": {
                   "en": "among 3 cheapest"
+                }
+              },
+              {
+                "id": "any2",
+                "label": {
+                  "en": "among 2 cheapest"
                 }
               },
               {
@@ -807,9 +831,15 @@
             },
             "values": [
               {
-                "id": "any",
+                "id": "any3",
                 "label": {
                   "en": "among 3 cheapest"
+                }
+              },
+              {
+                "id": "any2",
+                "label": {
+                  "en": "among 2 cheapest"
                 }
               },
               {
@@ -1250,6 +1280,17 @@
           },
           "hint": {
             "en": "Maximum price difference (as a percentage) allowed when grouping hours for maximize/minimize periods"
+          }
+        },
+        {
+          "id": "debugMode",
+          "type": "checkbox",
+          "label": {
+            "en": "Debug Mode"
+          },
+          "value": false,
+          "hint": {
+            "en": "Enable additional debug logging"
           }
         }
       ]

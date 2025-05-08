@@ -89,7 +89,10 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       changedKeys.includes("priceDiffThreshold")
     ) {
       if (changedKeys.includes("priceDiffThreshold")) {
-        this.log("Price difference threshold changed to", newSettings.priceDiffThreshold + "%");
+        this.log(
+          "Price difference threshold changed to",
+          newSettings.priceDiffThreshold + "%",
+        );
       } else {
         this.log("Date labels changed, updating periods");
       }
@@ -349,15 +352,15 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       this._lastPriceUpdate = Date.now();
 
       // Get prices for next 24 hours and cheapest times
-      const { 
-        currentPriceInfo, 
-        cheapestHours, 
-        cheapestHoursValues, 
+      const {
+        currentPriceInfo,
+        cheapestHours,
+        cheapestHoursValues,
         currentHourInCheapestValue,
         currentHourInCheapest4hValue,
         currentHourInCheapest12hValue,
         currentHourInCheapest24hValue,
-        currentHourInCheapest36hValue
+        currentHourInCheapest36hValue,
       } = await this.getCurrentPrice(apiKey);
 
       // Get daily average price
@@ -388,28 +391,28 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       this.log(`  12h window: ${currentHourInCheapest12hValue}`);
       this.log(`  24h window: ${currentHourInCheapest24hValue}`);
       this.log(`  36h window: ${currentHourInCheapest36hValue}`);
-      
+
       // Set all the capability values
       await this.setCapabilityValue(
         "current_hour_in_cheapest",
         currentHourInCheapestValue,
       );
-      
+
       await this.setCapabilityValue(
         "current_hour_in_cheapest_4h",
         currentHourInCheapest4hValue,
       );
-      
+
       await this.setCapabilityValue(
         "current_hour_in_cheapest_12h",
         currentHourInCheapest12hValue,
       );
-      
+
       await this.setCapabilityValue(
         "current_hour_in_cheapest_24h",
         currentHourInCheapest24hValue,
       );
-      
+
       await this.setCapabilityValue(
         "current_hour_in_cheapest_36h",
         currentHourInCheapest36hValue,
@@ -548,55 +551,68 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       is_expensive: currentFrame?.is_expensive || false,
       frame: currentFrame || null,
     };
-    
+
     // Helper function to calculate cheapest hour rank for a given window size
     const calculateCheapestHourRank = (hourWindow) => {
       let rankValue = 0;
-      
+
       if (currentFrame) {
         const now = new Date();
-        
+
         // Create window starting from current hour
         const windowEnd = new Date(now);
         windowEnd.setHours(now.getHours() + hourWindow);
-        
+
         // Get all frames within the window (including the current hour)
-        const windowFrames = validFrames.filter(frame => {
+        const windowFrames = validFrames.filter((frame) => {
           const frameStart = new Date(frame.start);
           // Include current hour and next hours up to window size
           return frameStart >= now && frameStart < windowEnd;
         });
-        
+
         // Add current hour to window frames if not already included
         let framesWithCurrentHour = [...windowFrames];
-        if (!framesWithCurrentHour.some(frame => frame.start === currentFrame.start)) {
+        if (
+          !framesWithCurrentHour.some(
+            (frame) => frame.start === currentFrame.start,
+          )
+        ) {
           framesWithCurrentHour.push(currentFrame);
         }
-        
-        this.log(`Found ${framesWithCurrentHour.length} frames in ${hourWindow}-hour window`);
-        
+
+        this.log(
+          `Found ${framesWithCurrentHour.length} frames in ${hourWindow}-hour window`,
+        );
+
         // Sort frames by price (cheapest first)
-        const sortedFrames = framesWithCurrentHour.sort((a, b) => a.price_gross - b.price_gross);
-        
+        const sortedFrames = framesWithCurrentHour.sort(
+          (a, b) => a.price_gross - b.price_gross,
+        );
+
         // Get the prices for logging
-        const frameDetails = sortedFrames.map(frame => {
+        const frameDetails = sortedFrames.map((frame) => {
           return {
             start: new Date(frame.start).toLocaleTimeString(),
             price: frame.price_gross,
-            isCurrent: frame.start === currentFrame.start
+            isCurrent: frame.start === currentFrame.start,
           };
         });
-        
-        this.log(`Frames in ${hourWindow}-hour window (sorted by price):`, JSON.stringify(frameDetails, null, 2));
-        
+
+        this.log(
+          `Frames in ${hourWindow}-hour window (sorted by price):`,
+          JSON.stringify(frameDetails, null, 2),
+        );
+
         // Find current frame's position in the sorted list
         if (sortedFrames.length > 0) {
           const currentFrameIndex = sortedFrames.findIndex(
-            frame => frame.start === currentFrame.start
+            (frame) => frame.start === currentFrame.start,
           );
-          
-          this.log(`Current frame position in ${hourWindow}-hour window sorted list: ${currentFrameIndex}`);
-          
+
+          this.log(
+            `Current frame position in ${hourWindow}-hour window sorted list: ${currentFrameIndex}`,
+          );
+
           if (currentFrameIndex === 0) {
             // Current hour is the cheapest in the window
             rankValue = 1;
@@ -609,10 +625,10 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
           }
         }
       }
-      
+
       return rankValue;
     };
-    
+
     // Calculate rank for different time windows
     let currentHourInCheapestValue = calculateCheapestHourRank(8);
     let currentHourInCheapest4hValue = calculateCheapestHourRank(4);
@@ -698,12 +714,27 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
         if (processedFrames.has(startFrame.start)) continue;
 
         // Start a new block with this frame
+        // The API typically provides hourly data where a frame's end time is the same as
+        // the next frame's start time. For example, 14:00-15:00 and 15:00-16:00.
+        const frameDuration =
+          new Date(startFrame.end) - new Date(startFrame.start);
+
+        // Create a block with proper start and end times
         const block = {
           startTime: new Date(startFrame.start),
           endTime: new Date(startFrame.end),
-          durationHours: 1,
+          durationHours: Math.max(1, Math.round(frameDuration / 3600000)),
           avgPrice: startFrame.price_gross,
           frames: [startFrame],
+          // Add frameInfo for debugging
+          frameInfo: [
+            {
+              index: 0,
+              start: new Date(startFrame.start).toISOString(),
+              end: new Date(startFrame.end).toISOString(),
+              price: startFrame.price_gross,
+            },
+          ],
         };
 
         processedFrames.add(startFrame.start);
@@ -714,28 +745,33 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
         // Keep extending until we can't anymore or reach 6 hours
         while (extended && block.frames.length < 6) {
           extended = false;
-          
+
           const lastFrameEnd = new Date(
             block.frames[block.frames.length - 1].end,
           );
-          
+
           // Look for adjacent frames in both directions
-          const adjacentFrames = availableFrames.filter(frame => {
+          const adjacentFrames = availableFrames.filter((frame) => {
             const frameStart = new Date(frame.start);
-            return frameStart.getTime() === lastFrameEnd.getTime() || // Next hour
-                  frameStart.getTime() === lastFrameEnd.getTime() - 3600000; // Previous hour
+            return (
+              frameStart.getTime() === lastFrameEnd.getTime() || // Next hour
+              frameStart.getTime() === lastFrameEnd.getTime() - 3600000
+            ); // Previous hour
           });
 
           // Find best match within price threshold
           let bestFrame = null;
           let bestTimeDiff = Infinity;
 
-          adjacentFrames.forEach(frame => {
+          adjacentFrames.forEach((frame) => {
             const frameTime = new Date(frame.start);
             const timeDiff = Math.abs(frameTime - lastFrameEnd);
-            
+
             // Prioritize same price first, then closest time
-            if (frame.price_gross === block.avgPrice && timeDiff < bestTimeDiff) {
+            if (
+              frame.price_gross === block.avgPrice &&
+              timeDiff < bestTimeDiff
+            ) {
               bestFrame = frame;
               bestTimeDiff = timeDiff;
             }
@@ -744,14 +780,19 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
           // If no exact price match found, look for nearby frames with small price difference
           if (!bestFrame) {
             // Get configurable price difference threshold (default to 10% if not set)
-            const priceDiffThreshold = this.settings.priceDiffThreshold !== undefined ? 
-              this.settings.priceDiffThreshold / 100 : 0.10;
-            
-            adjacentFrames.forEach(frame => {
+            const priceDiffThreshold =
+              this.settings.priceDiffThreshold !== undefined
+                ? this.settings.priceDiffThreshold / 100
+                : 0.1;
+
+            adjacentFrames.forEach((frame) => {
               const priceDiff = Math.abs(frame.price_gross - block.avgPrice);
               const timeDiff = Math.abs(new Date(frame.start) - lastFrameEnd);
-              
-              if (priceDiff <= block.avgPrice * priceDiffThreshold && timeDiff < bestTimeDiff) {
+
+              if (
+                priceDiff <= block.avgPrice * priceDiffThreshold &&
+                timeDiff < bestTimeDiff
+              ) {
                 bestFrame = frame;
                 bestTimeDiff = timeDiff;
               }
@@ -759,24 +800,65 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
           }
 
           if (bestFrame) {
-            const frameIndex = availableFrames.findIndex(f => f.start === bestFrame.start);
+            const frameIndex = availableFrames.findIndex(
+              (f) => f.start === bestFrame.start,
+            );
             availableFrames.splice(frameIndex, 1);
-            
+
             // Insert at correct position based on time
             const bestFrameTime = new Date(bestFrame.start);
-            if (bestFrameTime > lastFrameEnd) {
-              // Add to end
+
+            if (bestFrameTime >= lastFrameEnd) {
+              // Add to end - ensuring we don't create time overlap/gaps
               block.frames.push(bestFrame);
               block.endTime = new Date(bestFrame.end);
+
+              // Add frame info for debugging
+              block.frameInfo.push({
+                index: frameIndex,
+                start: new Date(bestFrame.start).toISOString(),
+                end: new Date(bestFrame.end).toISOString(),
+                price: bestFrame.price_gross,
+                position: "end",
+              });
             } else {
-              // Add to beginning
+              // Add to beginning - ensuring we don't create time overlap/gaps
               block.frames.unshift(bestFrame);
               block.startTime = new Date(bestFrame.start);
+
+              // Add frame info for debugging
+              block.frameInfo.unshift({
+                index: 0, // will shift others
+                start: new Date(bestFrame.start).toISOString(),
+                end: new Date(bestFrame.end).toISOString(),
+                price: bestFrame.price_gross,
+                position: "beginning",
+              });
+
+              // Update indices for existing frame info entries
+              for (let i = 1; i < block.frameInfo.length; i++) {
+                block.frameInfo[i].index = i;
+              }
             }
-            
+
             // Recalculate average
-            block.avgPrice = block.frames.reduce((sum, f) => sum + f.price_gross, 0) / block.frames.length;
+            block.avgPrice =
+              block.frames.reduce((sum, f) => sum + f.price_gross, 0) /
+              block.frames.length;
+
+            // Verify and enforce time continuity - calculate duration based on frame count
+            // For hourly data, each frame should be 1 hour, so use frame count directly
             block.durationHours = block.frames.length;
+
+            // Double-check start/end times and log any irregularities
+            const startToEndDuration =
+              (block.endTime - block.startTime) / 3600000;
+            if (Math.abs(startToEndDuration - block.durationHours) > 0.1) {
+              this.log(
+                `Warning: Duration mismatch - frames: ${block.durationHours}h, time diff: ${startToEndDuration.toFixed(2)}h`,
+              );
+            }
+
             extended = true;
           }
         }
@@ -871,9 +953,22 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
           })
           .replace("24:", "00:");
 
-        // Format end time
-        const endDateLabel = getDateLabel(block.endTime);
-        const endTime = block.endTime
+        // For hourly data, API typically sets endTime to the start of the next hour
+        // We need to ensure end time displays correctly without appearing before start time
+
+        // Create a proper formatter for times with hour display
+        const timeFormatter = new Intl.DateTimeFormat([], {
+          timeZone: this.homey.clock.getTimezone(),
+          hour: "2-digit",
+          minute: "2-digit",
+          hourCycle: "h23",
+        });
+
+        // For display purposes, keep the original endTime
+        const adjustedEndTime = block.endTime;
+
+        const endDateLabel = getDateLabel(adjustedEndTime);
+        const endTime = adjustedEndTime
           .toLocaleTimeString([], {
             timeZone: this.homey.clock.getTimezone(),
             hour: "2-digit",
@@ -882,12 +977,25 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
           })
           .replace("24:", "00:");
 
-        // Build final formatted string
+        // Format period display - for hourly data, we want clear time ranges
+        // For hourly blocks from API, the endTime of a block is actually the start time of the next hour
+
         let formattedPeriod;
+
+        // Always use the simple format: "Today 14:00-15:00" or "Today 14:00-Tomorrow 02:00"
+        // This prevents the confusing situation where end time appears before start time
+
+        // Handle the same day case
         if (startDateLabel === endDateLabel) {
-          formattedPeriod = `${startDateLabel} ${startTime} to ${endTime}`;
+          formattedPeriod = `${startDateLabel} ${startTime}`;
+
+          // If we have multiple hours, show the range
+          if (block.durationHours > 1) {
+            formattedPeriod += `-${endTime}`;
+          }
         } else {
-          formattedPeriod = `${startDateLabel} ${startTime} to ${endDateLabel} ${endTime}`;
+          // Different days
+          formattedPeriod = `${startDateLabel} ${startTime}-${endDateLabel} ${endTime}`;
         }
 
         // Store the original formatted times for reference
@@ -917,16 +1025,30 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
     this.checkCurrentUsagePeriod();
 
     // Log the results
-    const priceDiffThreshold = this.settings.priceDiffThreshold !== undefined ? 
-      this.settings.priceDiffThreshold : 10;
-    this.log(`--- OPTIMAL ELECTRICITY USAGE PERIODS (Price Threshold: ${priceDiffThreshold}%) ---`);
+    const priceDiffThreshold =
+      this.settings.priceDiffThreshold !== undefined
+        ? this.settings.priceDiffThreshold
+        : 10;
+    this.log(
+      `--- OPTIMAL ELECTRICITY USAGE PERIODS (Price Threshold: ${priceDiffThreshold}%) ---`,
+    );
 
     if (formattedCheapBlocks.length > 0) {
       this.log("MAXIMIZE USAGE during these cheap periods:");
       formattedCheapBlocks.forEach((block) => {
+        // Enhanced logging with clear frame information
         this.log(
-          `Period ${block.periodNumber}: ${block.formattedPeriod} (${block.durationHours} hours) - Avg price: ${block.avgPrice.toFixed(2)}`,
+          `Period ${block.periodNumber}: ${block.formattedPeriod} (${block.durationHours} hour${block.durationHours > 1 ? "s" : ""}) - Avg price: ${block.avgPrice.toFixed(4)}`,
         );
+
+        // Log detailed frame info for debugging
+        if (this.getSetting("debugMode")) {
+          block.frameInfo?.forEach((frame) => {
+            this.log(
+              `  Frame ${frame.index}: ${new Date(frame.start).toLocaleTimeString()} - ${new Date(frame.end).toLocaleTimeString()}`,
+            );
+          });
+        }
       });
     } else {
       this.log("No cheap periods found for maximizing usage");
@@ -935,9 +1057,19 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
     if (formattedExpensiveBlocks.length > 0) {
       this.log("LIMIT USAGE during these expensive periods:");
       formattedExpensiveBlocks.forEach((block) => {
+        // Enhanced logging with clear frame information
         this.log(
-          `Period ${block.periodNumber}: ${block.formattedPeriod} (${block.durationHours} hours) - Avg price: ${block.avgPrice.toFixed(2)}`,
+          `Period ${block.periodNumber}: ${block.formattedPeriod} (${block.durationHours} hour${block.durationHours > 1 ? "s" : ""}) - Avg price: ${block.avgPrice.toFixed(4)}`,
         );
+
+        // Log detailed frame info for debugging
+        if (this.getSetting("debugMode")) {
+          block.frameInfo?.forEach((frame) => {
+            this.log(
+              `  Frame ${frame.index}: ${new Date(frame.start).toLocaleTimeString()} - ${new Date(frame.end).toLocaleTimeString()}`,
+            );
+          });
+        }
       });
     } else {
       this.log("No expensive periods found for limiting usage");
@@ -960,7 +1092,7 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
 
     // Sort by start time
     const sortedBlocks = [...blocks].sort(
-      (a, b) => new Date(a.startTime) - new Date(b.startTime)
+      (a, b) => new Date(a.startTime) - new Date(b.startTime),
     );
 
     const merged = [];
@@ -970,66 +1102,97 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       const nextBlock = sortedBlocks[i];
       const currentEnd = new Date(currentBlock.endTime);
       const nextStart = new Date(nextBlock.startTime);
-      
+
       // Check for merge conditions:
-      // 1. Time gap less than 2 hours AND 
+      // 1. Time gap less than 2 hours AND
       // 2. Price difference less than 5% OR same price group
       const timeGap = nextStart - currentEnd;
       const priceDiff = Math.abs(currentBlock.avgPrice - nextBlock.avgPrice);
       const samePriceGroup = priceDiff < 0.0001; // Consider same price if difference < 0.01%
 
       // Get configurable price difference threshold (default to 10% if not set)
-      const priceDiffThreshold = this.settings.priceDiffThreshold !== undefined ? 
-        this.settings.priceDiffThreshold / 100 : 0.10;
-      
+      const priceDiffThreshold =
+        this.settings.priceDiffThreshold !== undefined
+          ? this.settings.priceDiffThreshold / 100
+          : 0.1;
+
       // Use half the threshold for merging blocks (more conservative)
       const mergeThreshold = priceDiffThreshold / 2;
-      
-      if (timeGap <= 7200000 && (priceDiff < currentBlock.avgPrice * mergeThreshold || samePriceGroup)) {
+
+      if (
+        timeGap <= 7200000 &&
+        (priceDiff < currentBlock.avgPrice * mergeThreshold || samePriceGroup)
+      ) {
         // Merge the blocks
-        currentBlock.endTime = new Date(Math.max(currentEnd, nextBlock.endTime));
-        currentBlock.durationHours = Math.round(
-          (currentBlock.endTime - currentBlock.startTime) / 3600000
+        currentBlock.endTime = new Date(
+          Math.max(currentEnd, nextBlock.endTime),
         );
-        
-        // Weighted average based on duration
-        const totalHours = currentBlock.durationHours + nextBlock.durationHours;
-        currentBlock.avgPrice = 
-          (currentBlock.avgPrice * currentBlock.durationHours +
-           nextBlock.avgPrice * nextBlock.durationHours) /
-          totalHours;
 
         // Merge frames while maintaining chronological order
-        currentBlock.frames = [...currentBlock.frames, ...nextBlock.frames]
-          .sort((a, b) => new Date(a.start) - new Date(b.start));
+        const combinedFrames = [
+          ...currentBlock.frames,
+          ...nextBlock.frames,
+        ].sort((a, b) => new Date(a.start) - new Date(b.start));
+
+        // Remove duplicates (same start time)
+        const uniqueFrames = [];
+        const frameStartTimes = new Set();
+
+        for (const frame of combinedFrames) {
+          if (!frameStartTimes.has(frame.start)) {
+            frameStartTimes.add(frame.start);
+            uniqueFrames.push(frame);
+          }
+        }
+
+        currentBlock.frames = uniqueFrames;
+
+        // Use frame count for duration - most accurate for hourly data
+        currentBlock.durationHours = currentBlock.frames.length;
+
+        // Recalculate average price based on all frames
+        currentBlock.avgPrice =
+          currentBlock.frames.reduce(
+            (sum, frame) => sum + frame.price_gross,
+            0,
+          ) / currentBlock.frames.length;
+
+        // Rebuild frameInfo for continuity
+        currentBlock.frameInfo = currentBlock.frames.map((frame, index) => ({
+          index,
+          start: new Date(frame.start).toISOString(),
+          end: new Date(frame.end).toISOString(),
+          price: frame.price_gross,
+        }));
       } else {
         merged.push(currentBlock);
         currentBlock = nextBlock;
       }
     }
-    
+
     merged.push(currentBlock);
 
     // Final sorting: longer duration first, then lower price
-    return merged.sort((a, b) => {
-      // Prioritize longer durations for same price groups
-      if (Math.abs(a.avgPrice - b.avgPrice) < 0.0001) {
-        return b.durationHours - a.durationHours;
-      }
-      return a.avgPrice - b.avgPrice;
-    }).slice(0, 3); // Return top 3
+    return merged
+      .sort((a, b) => {
+        // Prioritize longer durations for same price groups
+        if (Math.abs(a.avgPrice - b.avgPrice) < 0.0001) {
+          return b.durationHours - a.durationHours;
+        }
+        return a.avgPrice - b.avgPrice;
+      })
+      .slice(0, 3); // Return top 3
   }
-
 
   async getDailyAveragePrice(apiKey) {
     try {
       const now = new Date();
       const todayStart = new Date(now);
       todayStart.setHours(0, 0, 0, 0);
-      
+
       const todayEnd = new Date(now);
       todayEnd.setHours(23, 59, 59, 999);
-      
+
       const response = await this.apiRequest(
         "/integrations/pricing/",
         {
@@ -1039,16 +1202,18 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
         },
         apiKey,
       );
-      
+
       // Get the daily average price from response
       if (response && response.frames && response.frames.length > 0) {
         // Return the price_gross_avg from the first (and only) frame
         this.log("Daily average price data:", response.frames[0]);
         return response.frames[0].price_gross_avg || 0;
       }
-      
+
       // If no data is available, fallback to calculating average from hourly prices
-      this.log("No daily average price data available, calculating from hourly data");
+      this.log(
+        "No daily average price data available, calculating from hourly data",
+      );
       const hourlyResponse = await this.apiRequest(
         "/integrations/pricing/",
         {
@@ -1058,13 +1223,20 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
         },
         apiKey,
       );
-      
-      if (hourlyResponse && hourlyResponse.frames && hourlyResponse.frames.length > 0) {
+
+      if (
+        hourlyResponse &&
+        hourlyResponse.frames &&
+        hourlyResponse.frames.length > 0
+      ) {
         // Calculate average from hourly prices
-        const sum = hourlyResponse.frames.reduce((total, frame) => total + frame.price_gross, 0);
+        const sum = hourlyResponse.frames.reduce(
+          (total, frame) => total + frame.price_gross,
+          0,
+        );
         return sum / hourlyResponse.frames.length;
       }
-      
+
       // Return 0 if no data available
       return 0;
     } catch (error) {

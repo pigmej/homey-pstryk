@@ -103,7 +103,8 @@ module.exports = class PstrykPriceDriver extends Homey.Driver {
         const currentRank = device.getCapabilityValue('current_hour_in_cheapest');
         
         switch(rank) {
-          case 'any': return currentRank > 0;
+          case 'any3': return currentRank > 0;
+          case 'any2': return currentRank === 1 || currentRank === 2;
           case 'cheapest': return currentRank === 1;
           case 'second': return currentRank === 2;
           case 'third': return currentRank === 3;
@@ -118,7 +119,8 @@ module.exports = class PstrykPriceDriver extends Homey.Driver {
         const currentRank = device.getCapabilityValue('current_hour_in_cheapest_4h');
         
         switch(rank) {
-          case 'any': return currentRank > 0;
+          case 'any3': return currentRank > 0;
+          case 'any2': return currentRank === 1 || currentRank === 2;
           case 'cheapest': return currentRank === 1;
           case 'second': return currentRank === 2;
           case 'third': return currentRank === 3;
@@ -133,7 +135,8 @@ module.exports = class PstrykPriceDriver extends Homey.Driver {
         const currentRank = device.getCapabilityValue('current_hour_in_cheapest_12h');
         
         switch(rank) {
-          case 'any': return currentRank > 0;
+          case 'any3': return currentRank > 0;
+          case 'any2': return currentRank === 1 || currentRank === 2;
           case 'cheapest': return currentRank === 1;
           case 'second': return currentRank === 2;
           case 'third': return currentRank === 3;
@@ -148,7 +151,8 @@ module.exports = class PstrykPriceDriver extends Homey.Driver {
         const currentRank = device.getCapabilityValue('current_hour_in_cheapest_24h');
         
         switch(rank) {
-          case 'any': return currentRank > 0;
+          case 'any3': return currentRank > 0;
+          case 'any2': return currentRank === 1 || currentRank === 2;
           case 'cheapest': return currentRank === 1;
           case 'second': return currentRank === 2;
           case 'third': return currentRank === 3;
@@ -163,7 +167,8 @@ module.exports = class PstrykPriceDriver extends Homey.Driver {
         const currentRank = device.getCapabilityValue('current_hour_in_cheapest_36h');
         
         switch(rank) {
-          case 'any': return currentRank > 0;
+          case 'any3': return currentRank > 0;
+          case 'any2': return currentRank === 1 || currentRank === 2;
           case 'cheapest': return currentRank === 1;
           case 'second': return currentRank === 2;
           case 'third': return currentRank === 3;
