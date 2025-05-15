@@ -10,6 +10,13 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
   async onInit() {
     this.log("PstrykPriceDevice has been initialized");
     this.settings = await this.getSettings();
+    
+    // Initialize daily average cache
+    this._dailyAverageCache = {
+      value: null,
+      expires: null, // Timestamp when cache expires
+      date: null, // Date string for which average is valid
+    };
 
     await this.addCapability("current_hour_price");
     await this.addCapability("current_hour_value");
@@ -80,6 +87,8 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       if (this._priceRefreshInterval) {
         clearInterval(this._priceRefreshInterval);
       }
+      // Clear daily average cache
+      this._dailyAverageCache = { value: null, expires: null, date: null };
       this.setupPriceRefresh();
     }
 
@@ -1185,59 +1194,78 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
   }
 
   async getDailyAveragePrice(apiKey) {
+    // Check if we have valid cached data
+    const now = new Date();
+    const currentDate = now.toLocaleDateString('en-CA'); // YYYY-MM-DD format
+    
+    if (this._dailyAverageCache.expires > Date.now() && 
+        this._dailyAverageCache.date === currentDate) {
+      this.log('Using cached daily average price');
+      return this._dailyAverageCache.value;
+    }
+
     try {
-      const now = new Date();
-      const todayStart = new Date(now);
-      todayStart.setHours(0, 0, 0, 0);
+      // Clear cache if date changed
+      this._dailyAverageCache = { value: null, expires: null, date: null };
 
-      const todayEnd = new Date(now);
-      todayEnd.setHours(23, 59, 59, 999);
+      // Get price refresh hour from settings
+      const refreshHour = this.settings.priceRefreshHour || 15;
 
-      const response = await this.apiRequest(
+      // Calculate expiration time (next refresh hour)
+      const expires = new Date();
+      if (expires.getHours() >= refreshHour) {
+        expires.setDate(expires.getDate() + 1);
+      }
+      expires.setHours(refreshHour, 0, 0, 0);
+
+      // First try to get daily average from daily resolution API
+      const dailyResponse = await this.apiRequest(
         "/integrations/pricing/",
         {
           resolution: "day",
-          window_start: todayStart.toISOString(),
-          window_end: todayEnd.toISOString(),
+          window_start: new Date().toISOString().split('T')[0] + 'T00:00:00Z',
+          window_end: new Date().toISOString().split('T')[0] + 'T23:59:59Z',
         },
         apiKey,
       );
 
-      // Get the daily average price from response
-      if (response && response.frames && response.frames.length > 0) {
-        // Return the price_gross_avg from the first (and only) frame
-        this.log("Daily average price data:", response.frames[0]);
-        return response.frames[0].price_gross_avg || 0;
+      if (dailyResponse?.frames?.[0]?.price_gross_avg) {
+        this._dailyAverageCache = {
+          value: dailyResponse.frames[0].price_gross_avg,
+          expires: expires.getTime(),
+          date: currentDate,
+        };
+        this.log('Stored daily average from API response');
+        return this._dailyAverageCache.value;
       }
 
-      // If no data is available, fallback to calculating average from hourly prices
-      this.log(
-        "No daily average price data available, calculating from hourly data",
-      );
+      // Fallback to hourly calculation only if daily data not available
+      this.log('Calculating daily average from hourly prices');
       const hourlyResponse = await this.apiRequest(
         "/integrations/pricing/",
         {
           resolution: "hour",
-          window_start: todayStart.toISOString(),
-          window_end: todayEnd.toISOString(),
+          window_start: new Date().toISOString().split('T')[0] + 'T00:00:00Z',
+          window_end: new Date().toISOString().split('T')[0] + 'T23:59:59Z',
         },
         apiKey,
       );
 
-      if (
-        hourlyResponse &&
-        hourlyResponse.frames &&
-        hourlyResponse.frames.length > 0
-      ) {
-        // Calculate average from hourly prices
+      if (hourlyResponse?.frames?.length > 0) {
         const sum = hourlyResponse.frames.reduce(
-          (total, frame) => total + frame.price_gross,
+          (total, frame) => total + (frame.price_gross || 0),
           0,
         );
-        return sum / hourlyResponse.frames.length;
+        const avg = sum / hourlyResponse.frames.length;
+        
+        this._dailyAverageCache = {
+          value: avg,
+          expires: expires.getTime(),
+          date: currentDate,
+        };
+        return avg;
       }
 
-      // Return 0 if no data available
       return 0;
     } catch (error) {
       this.error("Error getting daily average price:", error);
