@@ -23,6 +23,25 @@
   "flow": {
     "triggers": [
       {
+        "id": "button_refresh_pressed",
+        "title": {
+          "en": "Refresh button pressed"
+        },
+        "titleFormatted": {
+          "en": "Refresh button was pressed"
+        },
+        "hint": {
+          "en": "This card is triggered when the chart refresh button is pressed."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=price_chart"
+          }
+        ]
+      },
+      {
         "id": "current_hour_in_cheapest_12h_changed",
         "title": {
           "en": "Current hour in cheapest status changed (12h window)"
@@ -1080,6 +1099,58 @@
   },
   "drivers": [
     {
+      "id": "price_chart",
+      "name": {
+        "en": "Electricity Price Chart"
+      },
+      "class": "other",
+      "capabilities": [
+        "button_refresh"
+      ],
+      "platforms": [
+        "local"
+      ],
+      "connectivity": [
+        "cloud"
+      ],
+      "images": {
+        "small": "/drivers/price_chart/assets/images/small.svg",
+        "large": "/drivers/price_chart/assets/images/large.svg",
+        "xlarge": "/drivers/price_chart/assets/images/xlarge.svg"
+      },
+      "pair": [
+        {
+          "id": "list_devices",
+          "template": "list_devices",
+          "navigation": {
+            "next": "add_devices"
+          }
+        },
+        {
+          "id": "add_devices",
+          "template": "add_devices"
+        }
+      ],
+      "repair": [],
+      "icon": "icon.svg",
+      "description": {
+        "en": "Displays the electricity price as a chart"
+      },
+      "settings": [
+        {
+          "id": "chartUrl",
+          "type": "text",
+          "label": {
+            "en": "Chart URL"
+          },
+          "value": "",
+          "hint": {
+            "en": "This URL will be used to display the price chart. It is automatically updated."
+          }
+        }
+      ]
+    },
+    {
       "name": {
         "en": "PSTRYK Energy Meter"
       },
@@ -1297,6 +1368,21 @@
     }
   ],
   "capabilities": {
+    "button_refresh": {
+      "type": "boolean",
+      "title": {
+        "en": "Refresh Chart"
+      },
+      "getable": true,
+      "setable": true,
+      "insights": false,
+      "uiComponent": "button",
+      "uiQuickAction": true,
+      "icon": "/assets/images/refresh.svg",
+      "desc": {
+        "en": "Button to refresh the price chart"
+      }
+    },
     "cheapest_h0": {
       "title": {
         "en": "next cheapest hour"

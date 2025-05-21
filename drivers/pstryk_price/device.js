@@ -150,8 +150,8 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
    * Check if current time is within a maximise or minimise usage period
    */
   checkCurrentUsagePeriod() {
-    // Use existing data if recent (30 seconds)
-    if (this._lastUsageCheck && Date.now() - this._lastUsageCheck < 30000) {
+    // Use existing data if recent (30 seconds) and price window is still valid
+    if (this._priceWindowValid && this._lastUsageCheck && Date.now() - this._lastUsageCheck < 30000) {
       return;
     }
 
@@ -333,8 +333,10 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       const lastUpdate = this._lastPriceUpdate || 0;
 
       // Cache prices for 5 minutes unless during refresh window
+      // Also check if we still have valid price window data
       if (
         now - lastUpdate < 300000 &&
+        this._priceWindowValid &&
         !(
           now.getHours() === (this.settings.priceRefreshHour || 15) &&
           now.getMinutes() < 5
@@ -359,6 +361,9 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
 
       // Track this update time
       this._lastPriceUpdate = Date.now();
+      
+      // Reset window validity flag before fetching new data
+      this._priceWindowValid = false;
 
       // Get prices for next 24 hours and cheapest times
       const {
@@ -473,16 +478,10 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
   async getCurrentPrice(apiKey) {
     const now = new Date();
     const windowStart = new Date();
-    if (windowStart.getUTCHours() === 0) {
-      windowStart.setUTCDate(windowStart.getUTCDate() - 1);
-      windowStart.setUTCHours(23, 0, 0, 0); // Set to 23:00 of the previous day
-    } else {
-      windowStart.setUTCHours(windowStart.getUTCHours() - 1, 0, 0, 0); // Rewind to one hour earlier than now in UTC
-    }
-
+    windowStart.setUTCHours(windowStart.getUTCHours() - 2, 0, 0, 0); // Rewind to two hours earlier than now in UTC
+    
     const windowEnd = new Date(windowStart);
-    windowEnd.setDate(windowStart.getUTCDate() + 1); // Add 24 hours
-    windowEnd.setUTCHours(23, 0, 0, 0);
+    windowEnd.setUTCDate(windowEnd.getUTCDate() + 2); // Extend to 48 hours for better coverage
 
     const response = await this.apiRequest(
       "/integrations/pricing/",
@@ -502,6 +501,18 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       }
       return true;
     });
+    
+    // Check if we have valid price data for at least the next hour
+    this._priceWindowValid = validFrames.some(frame => {
+      const frameEnd = new Date(frame.end);
+      return frameEnd > new Date(now.getTime() + 3600000); // Has frames for at least 1 hour ahead
+    });
+    
+    if (this._priceWindowValid) {
+      this.log("Price window is valid with future data available");
+    } else {
+      this.log("Warning: Price window may not contain enough future data");
+    }
 
     // Get cheapest hours sorted by price from valid frames
     const validCheapestFrames = [...validFrames]
@@ -515,7 +526,12 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       this.error("No valid frames found for cheapest hours");
     }
 
-    const currentFrame = validFrames.find((frame) => frame.is_live);
+    // Find current frame based on timestamp instead of is_live flag
+    const currentFrame = validFrames.find((frame) => {
+      const frameStart = new Date(frame.start);
+      const frameEnd = new Date(frame.end);
+      return now >= frameStart && now < frameEnd;
+    });
     const futureFrames = validFrames.filter(
       (frame) =>
         new Date(frame.start) > now && new Date(frame.start) <= windowEnd,
