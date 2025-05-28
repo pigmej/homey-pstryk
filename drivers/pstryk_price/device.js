@@ -654,6 +654,10 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       return rankValue;
     };
 
+    // Store valid frames and current frame for use in helper functions
+    this._validFrames = validFrames;
+    this._currentFrame = currentFrame;
+
     // Calculate rank for different time windows
     let currentHourInCheapestValue = calculateCheapestHourRank(8);
     let currentHourInCheapest4hValue = calculateCheapestHourRank(4);
@@ -1287,6 +1291,62 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       this.error("Error getting daily average price:", error);
       return 0;
     }
+  }
+
+  /**
+   * Calculate exact position of current hour when sorted by price
+   * @param {number} hourWindow - The time window in hours
+   * @param {boolean} cheapestFirst - If true, sort cheapest to expensive. If false, sort expensive to cheapest
+   * @returns {Object} Object containing position and total hours
+   */
+  calculateExactPricePosition(hourWindow, cheapestFirst = true) {
+    const validFrames = this._validFrames || [];
+    const currentFrame = this._currentFrame;
+    
+    if (!currentFrame || validFrames.length === 0) {
+      return { position: 0, totalHours: 0 };
+    }
+
+    const now = new Date();
+    const windowEnd = new Date(now);
+    windowEnd.setHours(now.getHours() + hourWindow);
+
+    // Get all frames within the window (including the current hour)
+    const windowFrames = validFrames.filter((frame) => {
+      const frameStart = new Date(frame.start);
+      return frameStart >= now && frameStart < windowEnd;
+    });
+
+    // Add current hour to window frames if not already included
+    let framesWithCurrentHour = [...windowFrames];
+    if (!framesWithCurrentHour.some(frame => frame.start === currentFrame.start)) {
+      framesWithCurrentHour.push(currentFrame);
+    }
+
+    if (framesWithCurrentHour.length === 0) {
+      return { position: 0, totalHours: 0 };
+    }
+
+    // Sort frames by price
+    const sortedFrames = framesWithCurrentHour.sort((a, b) => {
+      return cheapestFirst 
+        ? a.price_gross - b.price_gross 
+        : b.price_gross - a.price_gross;
+    });
+
+    // Find current frame's position in the sorted list (1-based)
+    const currentFrameIndex = sortedFrames.findIndex(
+      frame => frame.start === currentFrame.start
+    );
+
+    const position = currentFrameIndex >= 0 ? currentFrameIndex + 1 : 0;
+    const totalHours = sortedFrames.length;
+
+    this.log(
+      `Current hour position: ${position}/${totalHours} in ${hourWindow}-hour window (${cheapestFirst ? 'cheapest first' : 'expensive first'})`
+    );
+
+    return { position, totalHours };
   }
 
   // async getHistoricalPrices(apiKey) {

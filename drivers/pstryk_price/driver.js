@@ -11,14 +11,14 @@ module.exports = class PstrykPriceDriver extends Homey.Driver {
 
     // Register flow conditions
     this._registerFlowConditions();
-    
+
     // Register flow actions
     this._registerFlowActions();
 
     // Initial update for all devices
     setTimeout(this.updatePrices.bind(this), 2000);
   }
-  
+
   /**
    * Register flow actions
    */
@@ -30,7 +30,7 @@ module.exports = class PstrykPriceDriver extends Homey.Driver {
         const rank = device.getCapabilityValue('current_hour_in_cheapest');
         return { rank };
       });
-      
+
     // Get current hour cheapest rank (4h window)
     this.homey.flow.getActionCard('get_current_hour_in_cheapest_4h')
       .registerRunListener(async (args, state) => {
@@ -38,7 +38,7 @@ module.exports = class PstrykPriceDriver extends Homey.Driver {
         const rank = device.getCapabilityValue('current_hour_in_cheapest_4h');
         return { rank };
       });
-      
+
     // Get current hour cheapest rank (12h window)
     this.homey.flow.getActionCard('get_current_hour_in_cheapest_12h')
       .registerRunListener(async (args, state) => {
@@ -46,7 +46,7 @@ module.exports = class PstrykPriceDriver extends Homey.Driver {
         const rank = device.getCapabilityValue('current_hour_in_cheapest_12h');
         return { rank };
       });
-      
+
     // Get current hour cheapest rank (24h window)
     this.homey.flow.getActionCard('get_current_hour_in_cheapest_24h')
       .registerRunListener(async (args, state) => {
@@ -54,13 +54,37 @@ module.exports = class PstrykPriceDriver extends Homey.Driver {
         const rank = device.getCapabilityValue('current_hour_in_cheapest_24h');
         return { rank };
       });
-      
+
     // Get current hour cheapest rank (36h window)
     this.homey.flow.getActionCard('get_current_hour_in_cheapest_36h')
       .registerRunListener(async (args, state) => {
         const { device } = args;
         const rank = device.getCapabilityValue('current_hour_in_cheapest_36h');
         return { rank };
+      });
+
+    // Get current hour position (cheapest to expensive)
+    this.homey.flow.getActionCard('get_hour_position_cheapest_to_expensive')
+      .registerRunListener(async (args, state) => {
+        const { device, window } = args;
+        const hourWindow = parseInt(window);
+        const result = device.calculateExactPricePosition(hourWindow, true);
+        return {
+          position: result.position,
+          total_hours: result.totalHours
+        };
+      });
+
+    // Get current hour position (expensive to cheapest)
+    this.homey.flow.getActionCard('get_hour_position_expensive_to_cheapest')
+      .registerRunListener(async (args, state) => {
+        const { device, window } = args;
+        const hourWindow = parseInt(window);
+        const result = device.calculateExactPricePosition(hourWindow, false);
+        return {
+          position: result.position,
+          total_hours: result.totalHours
+        };
       });
   }
 
@@ -95,13 +119,13 @@ module.exports = class PstrykPriceDriver extends Homey.Driver {
         const { device } = args;
         return device.getCapabilityValue('minimise_usage_now');
       });
-      
+
     // Is current hour among cheapest (8h window)
     this.homey.flow.getConditionCard('is_current_hour_in_cheapest')
       .registerRunListener(async (args, state) => {
         const { device, rank } = args;
         const currentRank = device.getCapabilityValue('current_hour_in_cheapest');
-        
+
         switch(rank) {
           case 'any3': return currentRank > 0;
           case 'any2': return currentRank === 1 || currentRank === 2;
@@ -111,13 +135,13 @@ module.exports = class PstrykPriceDriver extends Homey.Driver {
           default: return false;
         }
       });
-      
+
     // Is current hour among cheapest (4h window)
     this.homey.flow.getConditionCard('is_current_hour_in_cheapest_4h')
       .registerRunListener(async (args, state) => {
         const { device, rank } = args;
         const currentRank = device.getCapabilityValue('current_hour_in_cheapest_4h');
-        
+
         switch(rank) {
           case 'any3': return currentRank > 0;
           case 'any2': return currentRank === 1 || currentRank === 2;
@@ -127,13 +151,13 @@ module.exports = class PstrykPriceDriver extends Homey.Driver {
           default: return false;
         }
       });
-      
+
     // Is current hour among cheapest (12h window)
     this.homey.flow.getConditionCard('is_current_hour_in_cheapest_12h')
       .registerRunListener(async (args, state) => {
         const { device, rank } = args;
         const currentRank = device.getCapabilityValue('current_hour_in_cheapest_12h');
-        
+
         switch(rank) {
           case 'any3': return currentRank > 0;
           case 'any2': return currentRank === 1 || currentRank === 2;
@@ -143,13 +167,13 @@ module.exports = class PstrykPriceDriver extends Homey.Driver {
           default: return false;
         }
       });
-      
+
     // Is current hour among cheapest (24h window)
     this.homey.flow.getConditionCard('is_current_hour_in_cheapest_24h')
       .registerRunListener(async (args, state) => {
         const { device, rank } = args;
         const currentRank = device.getCapabilityValue('current_hour_in_cheapest_24h');
-        
+
         switch(rank) {
           case 'any3': return currentRank > 0;
           case 'any2': return currentRank === 1 || currentRank === 2;
@@ -159,13 +183,13 @@ module.exports = class PstrykPriceDriver extends Homey.Driver {
           default: return false;
         }
       });
-      
+
     // Is current hour among cheapest (36h window)
     this.homey.flow.getConditionCard('is_current_hour_in_cheapest_36h')
       .registerRunListener(async (args, state) => {
         const { device, rank } = args;
         const currentRank = device.getCapabilityValue('current_hour_in_cheapest_36h');
-        
+
         switch(rank) {
           case 'any3': return currentRank > 0;
           case 'any2': return currentRank === 1 || currentRank === 2;
@@ -175,13 +199,13 @@ module.exports = class PstrykPriceDriver extends Homey.Driver {
           default: return false;
         }
       });
-      
+
     // Current price comparison
     this.homey.flow.getConditionCard('current_price_compare')
       .registerRunListener(async (args, state) => {
         const currentPrice = args.device.getCapabilityValue('current_hour_price');
         const compareValue = parseFloat(args.value);
-        
+
         switch(args.operator) {
           case 'gt': return currentPrice > compareValue;
           case 'lt': return currentPrice < compareValue;
@@ -189,17 +213,53 @@ module.exports = class PstrykPriceDriver extends Homey.Driver {
           default: throw new Error('Invalid operator');
         }
       });
-      
+
     // Current price compared to daily average
     this.homey.flow.getConditionCard('current_price_compare_to_daily_avg')
       .registerRunListener(async (args, state) => {
         const currentPrice = args.device.getCapabilityValue('current_hour_price');
         const dailyAvgPrice = args.device.getCapabilityValue('daily_average_price');
-        
+
         switch(args.operator) {
           case 'gt': return currentPrice > dailyAvgPrice;
           case 'lt': return currentPrice < dailyAvgPrice;
           case 'eq': return Math.abs(currentPrice - dailyAvgPrice) < 0.0001;
+          default: throw new Error('Invalid operator');
+        }
+      });
+
+    // Current hour position (cheapest to expensive)
+    this.homey.flow.getConditionCard('hour_position_cheapest_to_expensive')
+      .registerRunListener(async (args, state) => {
+        const { device, operator, position, window } = args;
+        const hourWindow = parseInt(window);
+        const targetPosition = parseInt(position);
+        const result = device.calculateExactPricePosition(hourWindow, true);
+
+        switch(operator) {
+          case 'eq': return result.position === targetPosition;
+          case 'lte': return result.position <= targetPosition;
+          case 'gte': return result.position >= targetPosition;
+          case 'lt': return result.position < targetPosition;
+          case 'gt': return result.position > targetPosition;
+          default: throw new Error('Invalid operator');
+        }
+      });
+      
+    // Current hour position (expensive to cheapest)
+    this.homey.flow.getConditionCard('hour_position_expensive_to_cheapest')
+      .registerRunListener(async (args, state) => {
+        const { device, operator, position, window } = args;
+        const hourWindow = parseInt(window);
+        const targetPosition = parseInt(position);
+        const result = device.calculateExactPricePosition(hourWindow, false);
+        
+        switch(operator) {
+          case 'eq': return result.position === targetPosition;
+          case 'lte': return result.position <= targetPosition;
+          case 'gte': return result.position >= targetPosition;
+          case 'lt': return result.position < targetPosition;
+          case 'gt': return result.position > targetPosition;
           default: throw new Error('Invalid operator');
         }
       });
