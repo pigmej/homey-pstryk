@@ -16,5 +16,8 @@
     },
     "author": {
         "name": "Jedrzej Nowak"
-    }
+    },
+    "permissions": [
+        "homey:manager:api"
+    ]
 }

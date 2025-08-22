@@ -1,0 +1,102 @@
+{
+  "title": {
+    "en": "Current hour position (expensive to cheapest)"
+  },
+  "titleFormatted": {
+    "en": "Current hour is at position [[operator]] [[position]] when sorted expensive to cheapest in [[window]]-hour window"
+  },
+  "args": [
+    {
+      "name": "device",
+      "type": "device",
+      "filter": "driver_id=pstryk_price"
+    },
+    {
+      "name": "operator",
+      "type": "dropdown",
+      "label": {
+        "en": "Comparison"
+      },
+      "values": [
+        {
+          "id": "eq",
+          "label": {
+            "en": "exactly"
+          }
+        },
+        {
+          "id": "lte",
+          "label": {
+            "en": "at or before"
+          }
+        },
+        {
+          "id": "gte",
+          "label": {
+            "en": "at or after"
+          }
+        },
+        {
+          "id": "lt",
+          "label": {
+            "en": "before"
+          }
+        },
+        {
+          "id": "gt",
+          "label": {
+            "en": "after"
+          }
+        }
+      ]
+    },
+    {
+      "name": "position",
+      "type": "number",
+      "label": {
+        "en": "Position"
+      },
+      "min": 1,
+      "max": 48
+    },
+    {
+      "name": "window",
+      "type": "dropdown",
+      "label": {
+        "en": "Time window"
+      },
+      "values": [
+        {
+          "id": "4",
+          "label": {
+            "en": "4 hours"
+          }
+        },
+        {
+          "id": "8",
+          "label": {
+            "en": "8 hours"
+          }
+        },
+        {
+          "id": "16",
+          "label": {
+            "en": "16 hours"
+          }
+        },
+        {
+          "id": "24",
+          "label": {
+            "en": "24 hours"
+          }
+        },
+        {
+          "id": "36",
+          "label": {
+            "en": "36 hours"
+          }
+        }
+      ]
+    }
+  ]
+}

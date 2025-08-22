@@ -20,27 +20,11 @@
   "author": {
     "name": "Jedrzej Nowak"
   },
+  "permissions": [
+    "homey:manager:api"
+  ],
   "flow": {
     "triggers": [
-      {
-        "id": "button_refresh_pressed",
-        "title": {
-          "en": "Refresh button pressed"
-        },
-        "titleFormatted": {
-          "en": "Refresh button was pressed"
-        },
-        "hint": {
-          "en": "This card is triggered when the chart refresh button is pressed."
-        },
-        "args": [
-          {
-            "name": "device",
-            "type": "device",
-            "filter": "driver_id=price_chart"
-          }
-        ]
-      },
       {
         "id": "current_hour_in_cheapest_12h_changed",
         "title": {
@@ -609,6 +593,212 @@
         ]
       },
       {
+        "title": {
+          "en": "Current hour position (cheapest to expensive)"
+        },
+        "titleFormatted": {
+          "en": "Current hour is at position [[operator]] [[position]] when sorted cheapest to expensive in [[window]]-hour window"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=pstryk_price"
+          },
+          {
+            "name": "operator",
+            "type": "dropdown",
+            "label": {
+              "en": "Comparison"
+            },
+            "values": [
+              {
+                "id": "eq",
+                "label": {
+                  "en": "exactly"
+                }
+              },
+              {
+                "id": "lte",
+                "label": {
+                  "en": "at or before"
+                }
+              },
+              {
+                "id": "gte",
+                "label": {
+                  "en": "at or after"
+                }
+              },
+              {
+                "id": "lt",
+                "label": {
+                  "en": "before"
+                }
+              },
+              {
+                "id": "gt",
+                "label": {
+                  "en": "after"
+                }
+              }
+            ]
+          },
+          {
+            "name": "position",
+            "type": "number",
+            "label": {
+              "en": "Position"
+            },
+            "min": 1,
+            "max": 48
+          },
+          {
+            "name": "window",
+            "type": "dropdown",
+            "label": {
+              "en": "Time window"
+            },
+            "values": [
+              {
+                "id": "4",
+                "label": {
+                  "en": "4 hours"
+                }
+              },
+              {
+                "id": "8",
+                "label": {
+                  "en": "8 hours"
+                }
+              },
+              {
+                "id": "16",
+                "label": {
+                  "en": "16 hours"
+                }
+              },
+              {
+                "id": "24",
+                "label": {
+                  "en": "24 hours"
+                }
+              },
+              {
+                "id": "36",
+                "label": {
+                  "en": "36 hours"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "hour_position_cheapest_to_expensive"
+      },
+      {
+        "title": {
+          "en": "Current hour position (expensive to cheapest)"
+        },
+        "titleFormatted": {
+          "en": "Current hour is at position [[operator]] [[position]] when sorted expensive to cheapest in [[window]]-hour window"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=pstryk_price"
+          },
+          {
+            "name": "operator",
+            "type": "dropdown",
+            "label": {
+              "en": "Comparison"
+            },
+            "values": [
+              {
+                "id": "eq",
+                "label": {
+                  "en": "exactly"
+                }
+              },
+              {
+                "id": "lte",
+                "label": {
+                  "en": "at or before"
+                }
+              },
+              {
+                "id": "gte",
+                "label": {
+                  "en": "at or after"
+                }
+              },
+              {
+                "id": "lt",
+                "label": {
+                  "en": "before"
+                }
+              },
+              {
+                "id": "gt",
+                "label": {
+                  "en": "after"
+                }
+              }
+            ]
+          },
+          {
+            "name": "position",
+            "type": "number",
+            "label": {
+              "en": "Position"
+            },
+            "min": 1,
+            "max": 48
+          },
+          {
+            "name": "window",
+            "type": "dropdown",
+            "label": {
+              "en": "Time window"
+            },
+            "values": [
+              {
+                "id": "4",
+                "label": {
+                  "en": "4 hours"
+                }
+              },
+              {
+                "id": "8",
+                "label": {
+                  "en": "8 hours"
+                }
+              },
+              {
+                "id": "16",
+                "label": {
+                  "en": "16 hours"
+                }
+              },
+              {
+                "id": "24",
+                "label": {
+                  "en": "24 hours"
+                }
+              },
+              {
+                "id": "36",
+                "label": {
+                  "en": "36 hours"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "hour_position_expensive_to_cheapest"
+      },
+      {
         "id": "is_current_hour_in_cheapest",
         "title": {
           "en": "Current hour is among cheapest (8h window)"
@@ -962,212 +1152,6 @@
             "filter": "driver_id=pstryk_price"
           }
         ]
-      },
-      {
-        "id": "hour_position_cheapest_to_expensive",
-        "title": {
-          "en": "Current hour position (cheapest to expensive)"
-        },
-        "titleFormatted": {
-          "en": "Current hour is at position [[operator]] [[position]] when sorted cheapest to expensive in [[window]]-hour window"
-        },
-        "args": [
-          {
-            "name": "device",
-            "type": "device",
-            "filter": "driver_id=pstryk_price"
-          },
-          {
-            "name": "operator",
-            "type": "dropdown",
-            "label": {
-              "en": "Comparison"
-            },
-            "values": [
-              {
-                "id": "eq",
-                "label": {
-                  "en": "exactly"
-                }
-              },
-              {
-                "id": "lte",
-                "label": {
-                  "en": "at or before"
-                }
-              },
-              {
-                "id": "gte",
-                "label": {
-                  "en": "at or after"
-                }
-              },
-              {
-                "id": "lt",
-                "label": {
-                  "en": "before"
-                }
-              },
-              {
-                "id": "gt",
-                "label": {
-                  "en": "after"
-                }
-              }
-            ]
-          },
-          {
-            "name": "position",
-            "type": "number",
-            "label": {
-              "en": "Position"
-            },
-            "min": 1,
-            "max": 48
-          },
-          {
-            "name": "window",
-            "type": "dropdown",
-            "label": {
-              "en": "Time window"
-            },
-            "values": [
-              {
-                "id": "4",
-                "label": {
-                  "en": "4 hours"
-                }
-              },
-              {
-                "id": "8",
-                "label": {
-                  "en": "8 hours"
-                }
-              },
-              {
-                "id": "16",
-                "label": {
-                  "en": "16 hours"
-                }
-              },
-              {
-                "id": "24",
-                "label": {
-                  "en": "24 hours"
-                }
-              },
-              {
-                "id": "36",
-                "label": {
-                  "en": "36 hours"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "hour_position_expensive_to_cheapest",
-        "title": {
-          "en": "Current hour position (expensive to cheapest)"
-        },
-        "titleFormatted": {
-          "en": "Current hour is at position [[operator]] [[position]] when sorted expensive to cheapest in [[window]]-hour window"
-        },
-        "args": [
-          {
-            "name": "device",
-            "type": "device",
-            "filter": "driver_id=pstryk_price"
-          },
-          {
-            "name": "operator",
-            "type": "dropdown",
-            "label": {
-              "en": "Comparison"
-            },
-            "values": [
-              {
-                "id": "eq",
-                "label": {
-                  "en": "exactly"
-                }
-              },
-              {
-                "id": "lte",
-                "label": {
-                  "en": "at or before"
-                }
-              },
-              {
-                "id": "gte",
-                "label": {
-                  "en": "at or after"
-                }
-              },
-              {
-                "id": "lt",
-                "label": {
-                  "en": "before"
-                }
-              },
-              {
-                "id": "gt",
-                "label": {
-                  "en": "after"
-                }
-              }
-            ]
-          },
-          {
-            "name": "position",
-            "type": "number",
-            "label": {
-              "en": "Position"
-            },
-            "min": 1,
-            "max": 48
-          },
-          {
-            "name": "window",
-            "type": "dropdown",
-            "label": {
-              "en": "Time window"
-            },
-            "values": [
-              {
-                "id": "4",
-                "label": {
-                  "en": "4 hours"
-                }
-              },
-              {
-                "id": "8",
-                "label": {
-                  "en": "8 hours"
-                }
-              },
-              {
-                "id": "16",
-                "label": {
-                  "en": "16 hours"
-                }
-              },
-              {
-                "id": "24",
-                "label": {
-                  "en": "24 hours"
-                }
-              },
-              {
-                "id": "36",
-                "label": {
-                  "en": "36 hours"
-                }
-              }
-            ]
-          }
-        ]
       }
     ],
     "actions": [
@@ -1302,7 +1286,6 @@
         ]
       },
       {
-        "id": "get_hour_position_cheapest_to_expensive",
         "title": {
           "en": "Get current hour position (cheapest to expensive)"
         },
@@ -1372,10 +1355,10 @@
             },
             "example": 8
           }
-        ]
+        ],
+        "id": "get_hour_position_cheapest_to_expensive"
       },
       {
-        "id": "get_hour_position_expensive_to_cheapest",
         "title": {
           "en": "Get current hour position (expensive to cheapest)"
         },
@@ -1445,63 +1428,12 @@
             },
             "example": 8
           }
-        ]
+        ],
+        "id": "get_hour_position_expensive_to_cheapest"
       }
     ]
   },
   "drivers": [
-    {
-      "id": "price_chart",
-      "name": {
-        "en": "Electricity Price Chart"
-      },
-      "class": "other",
-      "capabilities": [
-        "button_refresh"
-      ],
-      "platforms": [
-        "local"
-      ],
-      "connectivity": [
-        "cloud"
-      ],
-      "images": {
-        "small": "/drivers/price_chart/assets/images/small.svg",
-        "large": "/drivers/price_chart/assets/images/large.svg",
-        "xlarge": "/drivers/price_chart/assets/images/xlarge.svg"
-      },
-      "pair": [
-        {
-          "id": "list_devices",
-          "template": "list_devices",
-          "navigation": {
-            "next": "add_devices"
-          }
-        },
-        {
-          "id": "add_devices",
-          "template": "add_devices"
-        }
-      ],
-      "repair": [],
-      "icon": "icon.svg",
-      "description": {
-        "en": "Displays the electricity price as a chart"
-      },
-      "settings": [
-        {
-          "id": "chartUrl",
-          "type": "text",
-          "label": {
-            "en": "Chart URL"
-          },
-          "value": "",
-          "hint": {
-            "en": "This URL will be used to display the price chart. It is automatically updated."
-          }
-        }
-      ]
-    },
     {
       "name": {
         "en": "PSTRYK Energy Meter"
@@ -1720,21 +1652,6 @@
     }
   ],
   "capabilities": {
-    "button_refresh": {
-      "type": "boolean",
-      "title": {
-        "en": "Refresh Chart"
-      },
-      "getable": true,
-      "setable": true,
-      "insights": false,
-      "uiComponent": "button",
-      "uiQuickAction": true,
-      "icon": "/assets/images/refresh.svg",
-      "desc": {
-        "en": "Button to refresh the price chart"
-      }
-    },
     "cheapest_h0": {
       "title": {
         "en": "next cheapest hour"
