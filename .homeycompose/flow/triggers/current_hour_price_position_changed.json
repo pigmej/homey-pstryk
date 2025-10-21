@@ -1,0 +1,39 @@
+{
+  "id": "current_hour_price_position_changed",
+  "title": {
+    "en": "Current hour price position changed"
+  },
+  "desc": {
+    "en": "Triggered when the current hour price position changes"
+  },
+  "args": [
+    {
+      "name": "device",
+      "type": "device",
+      "filter": "driver_id=pstryk_price"
+    }
+  ],
+  "tokens": [
+    {
+      "name": "position",
+      "type": "number",
+      "title": {
+        "en": "Position"
+      }
+    },
+    {
+      "name": "total_tiers",
+      "type": "number",
+      "title": {
+        "en": "Total price tiers"
+      }
+    },
+    {
+      "name": "window_size",
+      "type": "number",
+      "title": {
+        "en": "Window size (hours)"
+      }
+    }
+  ]
+}

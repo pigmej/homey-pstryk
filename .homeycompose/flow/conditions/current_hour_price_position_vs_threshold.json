@@ -1,0 +1,45 @@
+{
+  "id": "current_hour_price_position_vs_threshold",
+  "title": {
+    "en": "Current hour price position vs Nth threshold"
+  },
+  "desc": {
+    "en": "Compare current hour price position against a threshold value"
+  },
+  "args": [
+    {
+      "name": "device",
+      "type": "device",
+      "filter": "driver_id=pstryk_price"
+    },
+    {
+      "name": "operator",
+      "type": "dropdown",
+      "values": [
+        {"id": "lte", "label": "≤"},
+        {"id": "lt", "label": "<"},
+        {"id": "eq", "label": "="},
+        {"id": "gte", "label": "≥"}
+      ]
+    },
+    {
+      "name": "threshold",
+      "type": "number",
+      "min": 1,
+      "max": 12,
+      "step": 1,
+      "value": 3
+    },
+    {
+      "name": "window",
+      "type": "dropdown",
+      "values": [
+        {"id": "4", "label": "4 hours"},
+        {"id": "8", "label": "8 hours"},
+        {"id": "12", "label": "12 hours"},
+        {"id": "24", "label": "24 hours"},
+        {"id": "36", "label": "36 hours"}
+      ]
+    }
+  ]
+}

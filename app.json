@@ -141,6 +141,45 @@
         ]
       },
       {
+        "id": "current_hour_price_position_changed",
+        "title": {
+          "en": "Current hour price position changed"
+        },
+        "desc": {
+          "en": "Triggered when the current hour price position changes"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=pstryk_price"
+          }
+        ],
+        "tokens": [
+          {
+            "name": "position",
+            "type": "number",
+            "title": {
+              "en": "Position"
+            }
+          },
+          {
+            "name": "total_tiers",
+            "type": "number",
+            "title": {
+              "en": "Total price tiers"
+            }
+          },
+          {
+            "name": "window_size",
+            "type": "number",
+            "title": {
+              "en": "Window size (hours)"
+            }
+          }
+        ]
+      },
+      {
         "id": "daily_average_price_changed",
         "title": {
           "en": "Daily average price changed"
@@ -499,6 +538,78 @@
       }
     ],
     "conditions": [
+      {
+        "id": "current_hour_price_position_vs_threshold",
+        "title": {
+          "en": "Current hour price position vs Nth threshold"
+        },
+        "desc": {
+          "en": "Compare current hour price position against a threshold value"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=pstryk_price"
+          },
+          {
+            "name": "operator",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "lte",
+                "label": "≤"
+              },
+              {
+                "id": "lt",
+                "label": "<"
+              },
+              {
+                "id": "eq",
+                "label": "="
+              },
+              {
+                "id": "gte",
+                "label": "≥"
+              }
+            ]
+          },
+          {
+            "name": "threshold",
+            "type": "number",
+            "min": 1,
+            "max": 12,
+            "step": 1,
+            "value": 3
+          },
+          {
+            "name": "window",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "4",
+                "label": "4 hours"
+              },
+              {
+                "id": "8",
+                "label": "8 hours"
+              },
+              {
+                "id": "12",
+                "label": "12 hours"
+              },
+              {
+                "id": "24",
+                "label": "24 hours"
+              },
+              {
+                "id": "36",
+                "label": "36 hours"
+              }
+            ]
+          }
+        ]
+      },
       {
         "id": "current_price_compare",
         "title": {
@@ -1282,6 +1393,55 @@
               "en": "Rank"
             },
             "example": 1
+          }
+        ]
+      },
+      {
+        "id": "get_current_hour_price_position",
+        "title": {
+          "en": "Get current hour price position"
+        },
+        "desc": {
+          "en": "Get the current hour's price position for a specific time window"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=pstryk_price"
+          },
+          {
+            "name": "window",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "4",
+                "label": "4 hours"
+              },
+              {
+                "id": "8",
+                "label": "8 hours"
+              },
+              {
+                "id": "12",
+                "label": "12 hours"
+              },
+              {
+                "id": "24",
+                "label": "24 hours"
+              },
+              {
+                "id": "36",
+                "label": "36 hours"
+              }
+            ]
+          }
+        ],
+        "state": [
+          {
+            "name": "position",
+            "type": "number",
+            "units": ""
           }
         ]
       },
@@ -2112,6 +2272,90 @@
             {
               "value": 3,
               "color": "#ff2a00"
+            }
+          ]
+        }
+      }
+    },
+    "current_hour_price_position": {
+      "id": "current_hour_price_position",
+      "type": "number",
+      "title": {
+        "en": "Current hour price position"
+      },
+      "desc": {
+        "en": "Current hour's price position when sorted by price (identical prices get same position)"
+      },
+      "getable": true,
+      "setable": false,
+      "units": {
+        "en": ""
+      },
+      "insights": false,
+      "insightsTitle": true,
+      "insightsChartType": "line",
+      "insightsDeepLink": false,
+      "insightsScale": false,
+      "range": [
+        1,
+        12
+      ],
+      "step": 1,
+      "decimals": 1,
+      "quorum": false,
+      "versions": {
+        "1": {
+          "title": {
+            "en": "Current hour price position"
+          }
+        }
+      }
+    },
+    "current_hour_price_vs_3rd_cheapest_8h": {
+      "title": {
+        "en": "Current hour in cheapest (8h window)"
+      },
+      "desc": {
+        "en": "Indicates if current hour is among the 3 cheapest hours in the next 8 hour window (0=not cheapest, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest)"
+      },
+      "tokens": [
+        {
+          "name": "current_hour_in_cheapest",
+          "type": "number",
+          "title": {
+            "en": "cheapest rank"
+          },
+          "example": 1
+        }
+      ],
+      "type": "number",
+      "min": 0,
+      "max": 3,
+      "getable": true,
+      "setable": false,
+      "insights": true,
+      "uiComponent": "sensor",
+      "color": {
+        "type": "continuous",
+        "value": {
+          "minimum": 0,
+          "maximum": 3,
+          "stops": [
+            {
+              "value": 0,
+              "color": "#808080"
+            },
+            {
+              "value": 1,
+              "color": "#0cce6b"
+            },
+            {
+              "value": 2,
+              "color": "#43c3ff"
+            },
+            {
+              "value": 3,
+              "color": "#ffd00a"
             }
           ]
         }

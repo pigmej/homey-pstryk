@@ -15,6 +15,9 @@ module.exports = class PstrykPriceDriver extends Homey.Driver {
     // Register flow actions
     this._registerFlowActions();
 
+    // Register flow triggers
+    this._registerFlowTriggers();
+
     // Initial update for all devices
     setTimeout(this.updatePrices.bind(this), 2000);
   }
@@ -84,6 +87,17 @@ module.exports = class PstrykPriceDriver extends Homey.Driver {
         return {
           position: result.position,
           total_hours: result.totalHours
+        };
+      });
+
+    // Get current hour price position (new tied ranking action)
+    this.homey.flow.getActionCard('get_current_hour_price_position')
+      .registerRunListener(async (args, state) => {
+        const { device, window } = args;
+        const hourWindow = parseInt(window);
+        const position = await device.calculateTiedPricePosition(hourWindow);
+        return {
+          position: position
         };
       });
   }
@@ -263,6 +277,24 @@ module.exports = class PstrykPriceDriver extends Homey.Driver {
           default: throw new Error('Invalid operator');
         }
       });
+
+    // Current hour price position vs threshold (new tied ranking condition)
+    this.homey.flow.getConditionCard('current_hour_price_position_vs_threshold')
+      .registerRunListener(async (args, state) => {
+        const { device, operator, threshold, window } = args;
+        const hourWindow = parseInt(window);
+        const thresholdValue = parseFloat(threshold);
+        const position = await device.calculateTiedPricePosition(hourWindow);
+        
+        switch(operator) {
+          case 'lte': return position <= thresholdValue;
+          case 'lt': return position < thresholdValue;
+          case 'eq': return Math.abs(position - thresholdValue) < 0.0001;
+          case 'gte': return position >= thresholdValue;
+          case 'gt': return position > thresholdValue;
+          default: throw new Error('Invalid operator');
+        }
+      });
   }
 
   async updatePrices(retryCount = 0) {
@@ -292,10 +324,30 @@ module.exports = class PstrykPriceDriver extends Homey.Driver {
     }
   }
 
+/**
+   * Register flow triggers
+   */
+  _registerFlowTriggers() {
+    // Current hour price position changed trigger
+    this.homey.flow.getTriggerCard('current_hour_price_position_changed')
+      .registerRunListener(async (args, state) => {
+        const { device } = args;
+        const position = device.getCapabilityValue('current_hour_price_position');
+        
+        // Calculate total tiers and window size for tokens
+        const totalTiers = 12; // Approximate based on capability range
+        const windowSize = 24; // Default window for the capability
+        
+        return {
+          position: position,
+          total_tiers: totalTiers,
+          window_size: windowSize
+        };
+      });
+  }
+
   /**
    * onPairListDevices is called when a user is adding a device
-   * and the 'list_devices' view is called.
-   * This should return an array with the data of devices that are available for pairing.
    */
   async onPairListDevices() {
     return [

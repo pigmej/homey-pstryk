@@ -18,6 +18,9 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       date: null, // Date string for which average is valid
     };
 
+    // Initialize price tiers cache for tied ranking
+    this._priceTiersCache = {};
+
     await this.addCapability("current_hour_price");
     await this.addCapability("current_hour_value");
     await this.addCapability("currently_cheap");
@@ -38,6 +41,7 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
     await this.addCapability("current_hour_in_cheapest_12h");
     await this.addCapability("current_hour_in_cheapest_24h");
     await this.addCapability("current_hour_in_cheapest_36h");
+    await this.addCapability("current_hour_price_position");
 
     this._hasRefreshedToday = false;
     this._previousBlocks = null;
@@ -339,6 +343,9 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       // Reset window validity flag before fetching new data
       this._priceWindowValid = false;
 
+      // Invalidate price tiers cache for tied ranking
+      this._invalidatePriceTiersCache();
+
       // Get prices for next 24 hours and cheapest times
       const {
         currentPriceInfo,
@@ -378,6 +385,9 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       await this.setCapabilityValue("current_hour_in_cheapest_24h", currentHourInCheapest24hValue);
 
       await this.setCapabilityValue("current_hour_in_cheapest_36h", currentHourInCheapest36hValue);
+
+      // Update new tied price position capability
+      await this.updatePricePositionCapability();
 
       this.log(currentPriceInfo, cheapestHours, cheapestHoursValues);
 
@@ -1234,4 +1244,183 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
   //     price: frame.price_gross_avg,
   //   }));
   // }
+
+  /**
+   * Calculates price position using tiered ranking for fair tie handling
+   * @param {number} hourWindow - Time window in hours (4, 8, 12, 24, 36)
+   * @returns {number} Position value (1.0, 2.0, 3.0, etc.) with consistent floating-point precision
+   */
+  calculateTiedPricePosition(hourWindow) {
+    try {
+      // Check cache first using existing invalidation patterns
+      if (this._priceWindowValid) {
+        const cached = this._priceTiersCache[hourWindow];
+        if (cached && cached.valid && this._isCacheValid(cached.timestamp)) {
+          this.log("Using cached price position:", cached.currentHourPosition);
+          return Number(cached.currentHourPosition.toFixed(1)); // Consistent precision
+        }
+      }
+
+      // Perform tiered ranking calculation with precise floating-point handling
+      const position = this._calculateTiedPosition(hourWindow);
+      const precisePosition = Number(position.toFixed(1)); // Ensure consistent decimal precision
+
+      // Update cache with new results
+      this._updatePriceTiersCache(hourWindow, precisePosition);
+
+      return precisePosition;
+    } catch (error) {
+      this.error("Error calculating tied price position:", error);
+      // Fallback to safe default with consistent precision
+      // let's return last one just in case.
+      return 12.0;
+    }
+  }
+
+  /**
+   * Checks if cache entry is still valid
+   * @param {number} timestamp - Cache timestamp
+   * @returns {boolean} True if cache is valid
+   */
+  _isCacheValid(timestamp) {
+    return Date.now() - timestamp < 300000; // 5 minute cache validity
+  }
+
+  /**
+   * Updates price tiers cache with new calculation results
+   * @param {number} windowSize - Time window size
+   * @param {number} position - Calculated position
+   */
+  _updatePriceTiersCache(windowSize, position) {
+    this._priceTiersCache[windowSize] = {
+      currentHourPosition: position,
+      timestamp: Date.now(),
+      valid: true,
+    };
+  }
+
+  /**
+   * Invalidates price tiers cache when prices are updated
+   */
+  _invalidatePriceTiersCache() {
+    this._priceTiersCache = {};
+  }
+
+  /**
+   * Core calculation logic for tied price position
+   * @param {number} hourWindow - Time window in hours
+   * @returns {number} Position value
+   */
+  _calculateTiedPosition(hourWindow) {
+    const validFrames = this._validFrames || [];
+    const currentFrame = this._currentFrame;
+
+    if (!currentFrame || validFrames.length === 0) {
+      return 1.0;
+    }
+
+    const now = new Date();
+    const windowEnd = new Date(now);
+    windowEnd.setHours(now.getHours() + hourWindow);
+
+    // Get all frames within the window (including the current hour)
+    const windowFrames = validFrames.filter((frame) => {
+      const frameStart = new Date(frame.start);
+      return frameStart >= now && frameStart < windowEnd;
+    });
+
+    // Add current hour to window frames if not already included
+    let framesWithCurrentHour = [...windowFrames];
+    if (!framesWithCurrentHour.some((frame) => frame.start === currentFrame.start)) {
+      framesWithCurrentHour.push(currentFrame);
+    }
+
+    if (framesWithCurrentHour.length === 0) {
+      return 1.0;
+    }
+
+    // Group frames by identical prices
+    const priceTiers = this.groupFramesByPrice(framesWithCurrentHour);
+
+    // Find current frame's position in the price tiers
+    const currentTier = this.findTierForCurrentHour(priceTiers, currentFrame);
+
+    // Assign sequential position values to tiers
+    const positionedTiers = this.assignTierPositions(priceTiers);
+
+    // Find and return the position for current tier
+    const currentTierInfo = positionedTiers.find((tier) => tier.price === currentTier.price);
+
+    return currentTierInfo ? currentTierInfo.position : 1.0;
+  }
+
+  /**
+   * Groups frames by identical prices to create price tiers
+   * @param {Array} frames - Array of frames to group
+   * @returns {Array} Array of price tiers
+   */
+  groupFramesByPrice(frames) {
+    const priceGroups = {};
+
+    // Group frames by price (with floating point precision handling)
+    frames.forEach((frame) => {
+      const priceKey = Number(frame.price_gross.toFixed(6)); // 6 decimal precision for grouping
+      if (!priceGroups[priceKey]) {
+        priceGroups[priceKey] = [];
+      }
+      priceGroups[priceKey].push(frame);
+    });
+
+    // Convert to sorted array of price tiers
+    const priceTiers = Object.keys(priceGroups).map((priceKey) => ({
+      price: parseFloat(priceKey),
+      frames: priceGroups[priceKey],
+      count: priceGroups[priceKey].length,
+    }));
+
+    // Sort by price (cheapest first)
+    return priceTiers.sort((a, b) => a.price - b.price);
+  }
+
+  /**
+   * Finds the price tier that contains the current frame
+   * @param {Array} priceTiers - Array of price tiers
+   * @param {Object} currentFrame - The current frame to find
+   * @returns {Object} The price tier containing the current frame
+   */
+  findTierForCurrentHour(priceTiers, currentFrame) {
+    const currentPrice = Number(currentFrame.price_gross.toFixed(6));
+
+    return (
+      priceTiers.find(
+        (tier) => Math.abs(tier.price - currentPrice) < 0.000001, // Floating point comparison tolerance
+      ) || priceTiers[0]
+    ); // Fallback to cheapest tier
+  }
+
+  /**
+   * Assigns sequential position values to price tiers
+   * @param {Array} priceTiers - Array of price tiers sorted by price
+   * @returns {Array} Price tiers with assigned positions
+   */
+  assignTierPositions(priceTiers) {
+    return priceTiers.map((tier, index) => ({
+      ...tier,
+      position: index + 1.0, // 1.0, 2.0, 3.0, etc.
+    }));
+  }
+
+  /**
+   * Updates the current_hour_price_position capability value
+   */
+  async updatePricePositionCapability() {
+    try {
+      // Calculate position for default 24h window
+      const position = this.calculateTiedPricePosition(24);
+      await this.setCapabilityValue("current_hour_price_position", position);
+      this.log("Updated current_hour_price_position capability:", position);
+    } catch (error) {
+      this.error("Error updating current_hour_price_position capability:", error);
+    }
+  }
 };

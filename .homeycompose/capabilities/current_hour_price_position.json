@@ -1,0 +1,31 @@
+{
+  "id": "current_hour_price_position",
+  "type": "number",
+  "title": {
+    "en": "Current hour price position"
+  },
+  "desc": {
+    "en": "Current hour's price position when sorted by price (identical prices get same position)"
+  },
+  "getable": true,
+  "setable": false,
+  "units": {
+    "en": ""
+  },
+  "insights": false,
+  "insightsTitle": true,
+  "insightsChartType": "line",
+  "insightsDeepLink": false,
+  "insightsScale": false,
+  "range": [1.0, 12.0],
+  "step": 1.0,
+  "decimals": 1,
+  "quorum": false,
+  "versions": {
+    "1": {
+      "title": {
+        "en": "Current hour price position"
+      }
+    }
+  }
+}
