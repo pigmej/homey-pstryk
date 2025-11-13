@@ -1088,7 +1088,8 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
     const currentFrame = this._currentFrame;
 
     if (!currentFrame || validFrames.length === 0) {
-      return 1.0;
+      this.log(`No data available for ${hourWindow}h window - returning worst position ${hourWindow}`);
+      return hourWindow;  // Return worst position for this window
     }
 
     const now = new Date();
@@ -1108,7 +1109,8 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
     }
 
     if (framesWithCurrentHour.length === 0) {
-      return 1.0;
+      this.log(`No frames in ${hourWindow}h window - returning worst position ${hourWindow}`);
+      return hourWindow;  // Return worst position for this window
     }
 
     // Group frames by identical prices
