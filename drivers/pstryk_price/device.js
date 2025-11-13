@@ -1,7 +1,64 @@
 "use strict";
 
 const Homey = require("homey");
-const https = require("https");
+
+/**
+ * Internal State Updater class for managing hour boundary detection
+ */
+class InternalStateUpdater {
+  constructor(device) {
+    this.device = device;
+    this.lastHour = null;
+    this.updateInterval = null;
+  }
+
+  detectHourBoundary() {
+    const now = new Date();
+    const currentHour = now.getHours();
+
+    if (this.lastHour !== currentHour) {
+      this.lastHour = currentHour;
+      return true;
+    }
+    return false;
+  }
+
+  async updateCurrentHourCapabilities() {
+    try {
+      // Invalidate price tiers cache when hour changes
+      this.device._invalidatePriceTiersCache();
+      await this.device.updateCapabilitiesFromCache();
+    } catch (error) {
+      this.device.error("Error updating current hour capabilities:", error);
+    }
+  }
+
+  async updatePeriodCapabilities() {
+    try {
+      await this.device.updateUsagePeriodsFromCache();
+    } catch (error) {
+      this.device.error("Error updating period capabilities:", error);
+    }
+  }
+
+  startHourBoundaryDetection() {
+    // Check every minute for hour boundary
+    this.updateInterval = this.device.homey.setInterval(async () => {
+      if (this.detectHourBoundary()) {
+        this.device.log("Hour boundary detected, updating capabilities");
+        await this.updateCurrentHourCapabilities();
+        await this.updatePeriodCapabilities();
+      }
+    }, 60 * 1000); // Check every minute
+  }
+
+  stopHourBoundaryDetection() {
+    if (this.updateInterval) {
+      this.device.homey.clearInterval(this.updateInterval);
+      this.updateInterval = null;
+    }
+  }
+}
 
 module.exports = class PstrykPriceDevice extends Homey.Device {
   /**
@@ -10,13 +67,6 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
   async onInit() {
     this.log("PstrykPriceDevice has been initialized");
     this.settings = await this.getSettings();
-
-    // Initialize daily average cache
-    this._dailyAverageCache = {
-      value: null,
-      expires: null, // Timestamp when cache expires
-      date: null, // Date string for which average is valid
-    };
 
     // Initialize price tiers cache for tied ranking
     this._priceTiersCache = {};
@@ -42,9 +92,13 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
     await this.addCapability("current_hour_in_cheapest_24h");
     await this.addCapability("current_hour_in_cheapest_36h");
     await this.addCapability("current_hour_price_position");
+    await this.addCapability("cache_status");
 
-    this._hasRefreshedToday = false;
     this._previousBlocks = null;
+    this._cachedData = null;
+
+    // Initialize internal state updater
+    this.internalStateUpdater = new InternalStateUpdater(this);
 
     // Add periodic check for current usage period (reduced frequency)
     this._currentCheckInterval = this.homey.setInterval(
@@ -54,11 +108,224 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       5 * 60 * 1000,
     ); // Check every 5 minutes
 
-    // Setup daily price refresh
-    this.setupPriceRefresh();
+    // Start hour boundary detection
+    this.internalStateUpdater.startHourBoundaryDetection();
 
-    // Initial update
-    setTimeout(() => this.updatePrices(), 2000);
+    // Register for cache updates from driver - store bound reference for proper cleanup
+    this._handleCacheUpdateBound = this.handleCacheUpdate.bind(this);
+    this.driver.on('cache-updated', this._handleCacheUpdateBound);
+
+    // Register for cache status changes
+    this._handleCacheStatusBound = this.handleCacheStatusChange.bind(this);
+    this.driver.on('cache-status-changed', this._handleCacheStatusBound);
+
+    // Initial update request to driver
+    setTimeout(() => this.requestCacheUpdate(), 2000);
+  }
+
+  /**
+   * Handle cache updates from driver
+   */
+  async handleCacheUpdate(cachedData) {
+    this.log("Received cache update from driver");
+    this._cachedData = cachedData;
+    
+    // Invalidate price tiers cache when new data arrives
+    this._invalidatePriceTiersCache();
+    
+    // Update cache status capability
+    const status = cachedData.isStale ? 'stale' : 'fresh';
+    await this.setCapabilityValue("cache_status", status);
+    
+    // Update all capabilities from cached data
+    await this.updateCapabilitiesFromCache();
+    await this.updateUsagePeriodsFromCache();
+  }
+
+  /**
+   * Handle cache status changes from driver
+   */
+  async handleCacheStatusChange(statusInfo) {
+    this.log("Cache status changed:", statusInfo);
+    await this.setCapabilityValue("cache_status", statusInfo.status);
+  }
+
+  /**
+   * Request cache update from driver
+   */
+  async requestCacheUpdate() {
+    try {
+      await this.driver.updatePrices();
+    } catch (error) {
+      this.error("Error requesting cache update:", error);
+    }
+  }
+
+  /**
+   * Update capabilities from cached data
+   */
+  async updateCapabilitiesFromCache() {
+    if (!this._cachedData || !this._cachedData.currentPrices) {
+      this.log("No cached data available for capability update");
+      return;
+    }
+
+    try {
+      const now = new Date();
+      const currentPrices = this._cachedData.currentPrices;
+      
+      // Find current frame
+      const currentFrame = currentPrices.find((frame) => {
+        const frameStart = new Date(frame.start);
+        const frameEnd = new Date(frame.end);
+        return now >= frameStart && now < frameEnd;
+      });
+
+      if (!currentFrame) {
+        this.log("No current frame found in cached data");
+        return;
+      }
+
+      // Update basic price capabilities
+      await this.setCapabilityValue("current_hour_price", currentFrame.price_gross);
+      await this.setCapabilityValue("current_hour_value", 
+        new Date(currentFrame.start).toLocaleString([], {
+          timeZone: this.homey.clock.getTimezone(),
+          hour: "2-digit",
+          minute: "2-digit",
+          day: "2-digit",
+          month: "2-digit",
+          hourCycle: "h23",
+        })
+      );
+      await this.setCapabilityValue("currently_cheap", currentFrame.is_cheap);
+      await this.setCapabilityValue("currently_expensive", currentFrame.is_expensive);
+
+      // Update daily average
+      if (this._cachedData.dailyAverage) {
+        await this.setCapabilityValue("daily_average_price", this._cachedData.dailyAverage);
+      }
+
+      // Update cheapest hours
+      const futureFrames = currentPrices.filter(
+        (frame) => new Date(frame.start) > now
+      );
+      const cheapestFrames = [...futureFrames].sort((a, b) => a.price_gross - b.price_gross).slice(0, 3);
+
+      const cheapestHours = cheapestFrames.map((frame) => {
+        return new Date(frame.start)
+          .toLocaleString([], {
+            timeZone: this.homey.clock.getTimezone(),
+            hour: "2-digit",
+            minute: "2-digit",
+            day: "2-digit",
+            month: "2-digit",
+            hourCycle: "h23",
+          })
+          .replace(",", "");
+      });
+
+      const cheapestHoursValues = cheapestFrames.map((frame) => frame.price_gross);
+
+      await this.setCapabilityValue("cheapest_h0", cheapestHours[0]);
+      await this.setCapabilityValue("cheapest_h0_value", cheapestHoursValues[0]);
+      await this.setCapabilityValue("cheapest_h1", cheapestHours[1]);
+      await this.setCapabilityValue("cheapest_h1_value", cheapestHoursValues[1]);
+      await this.setCapabilityValue("cheapest_h2", cheapestHours[2]);
+      await this.setCapabilityValue("cheapest_h2_value", cheapestHoursValues[2]);
+
+      // Update cheapest hour rankings
+      await this.updateCheapestHourRankings(currentPrices, currentFrame);
+
+      // Update price position capability
+      await this.updatePricePositionCapability();
+
+      // Store frames for helper functions
+      this._validFrames = currentPrices;
+      this._currentFrame = currentFrame;
+
+    } catch (error) {
+      this.error("Error updating capabilities from cache:", error);
+    }
+  }
+
+  /**
+   * Update cheapest hour rankings for different time windows
+   */
+  async updateCheapestHourRankings(currentPrices, currentFrame) {
+    const calculateCheapestHourRank = (hourWindow) => {
+      if (!currentFrame) return 0;
+
+      const now = new Date();
+      const windowEnd = new Date(now);
+      windowEnd.setHours(now.getHours() + hourWindow);
+
+      const windowFrames = currentPrices.filter((frame) => {
+        const frameStart = new Date(frame.start);
+        return frameStart >= now && frameStart < windowEnd;
+      });
+
+      let framesWithCurrentHour = [...windowFrames];
+      if (!framesWithCurrentHour.some((frame) => frame.start === currentFrame.start)) {
+        framesWithCurrentHour.push(currentFrame);
+      }
+
+      const sortedFrames = framesWithCurrentHour.sort((a, b) => a.price_gross - b.price_gross);
+      const currentFrameIndex = sortedFrames.findIndex((frame) => frame.start === currentFrame.start);
+
+      if (currentFrameIndex === 0) return 1;
+      if (currentFrameIndex === 1) return 2;
+      if (currentFrameIndex === 2) return 3;
+      return 0;
+    };
+
+    const currentHourInCheapestValue = calculateCheapestHourRank(8);
+    const currentHourInCheapest4hValue = calculateCheapestHourRank(4);
+    const currentHourInCheapest12hValue = calculateCheapestHourRank(12);
+    const currentHourInCheapest24hValue = calculateCheapestHourRank(24);
+    const currentHourInCheapest36hValue = calculateCheapestHourRank(36);
+
+    await this.setCapabilityValue("current_hour_in_cheapest", currentHourInCheapestValue);
+    await this.setCapabilityValue("current_hour_in_cheapest_4h", currentHourInCheapest4hValue);
+    await this.setCapabilityValue("current_hour_in_cheapest_12h", currentHourInCheapest12hValue);
+    await this.setCapabilityValue("current_hour_in_cheapest_24h", currentHourInCheapest24hValue);
+    await this.setCapabilityValue("current_hour_in_cheapest_36h", currentHourInCheapest36hValue);
+  }
+
+  /**
+   * Update usage periods from cached data
+   */
+  async updateUsagePeriodsFromCache() {
+    if (!this._cachedData || !this._cachedData.currentPrices) {
+      return;
+    }
+
+    try {
+      const { cheapBlocks, expensiveBlocks } = this.findOptimalPeriods(this._cachedData.currentPrices);
+
+      if (cheapBlocks.length > 0) {
+        await this.setCapabilityValue(
+          "maximise_usage_during",
+          cheapBlocks.map((block) => block.formattedPeriod).join("\n"),
+        );
+      }
+
+      if (expensiveBlocks.length > 0) {
+        await this.setCapabilityValue(
+          "minimise_usage_during",
+          expensiveBlocks.map((block) => block.formattedPeriod).join("\n"),
+        );
+      }
+
+      // Store for current usage period checking
+      this._previousBlocks = {
+        cheapBlocks: cheapBlocks,
+        expensiveBlocks: expensiveBlocks,
+      };
+
+    } catch (error) {
+      this.error("Error updating usage periods from cache:", error);
+    }
   }
 
   /**
@@ -81,19 +348,14 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
     this.settings = newSettings;
 
     if (changedKeys.includes("apiKey")) {
-      this.log("API key changed, updating prices");
-      this.updatePrices();
+      this.log("API key changed, requesting cache refresh");
+      this.driver.apiOrchestrator.requestManualRefresh();
+      this.requestCacheUpdate();
     }
 
     if (changedKeys.includes("priceRefreshHour")) {
-      this.log("Price refresh hour changed, updating refresh schedule");
-      // Clear existing interval and set up a new one
-      if (this._priceRefreshInterval) {
-        clearInterval(this._priceRefreshInterval);
-      }
-      // Clear daily average cache
-      this._dailyAverageCache = { value: null, expires: null, date: null };
-      this.setupPriceRefresh();
+      this.log("Price refresh hour changed, cache will refresh at new time");
+      // Cache refresh logic is handled by the driver
     }
 
     if (
@@ -106,7 +368,8 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       } else {
         this.log("Date labels changed, updating periods");
       }
-      this.updatePrices(); // Refresh displayed periods with new settings
+      // Update periods from existing cache with new settings
+      this.updateUsagePeriodsFromCache();
     }
 
     return Promise.resolve();
@@ -127,23 +390,24 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
   async onDeleted() {
     this.log("PstrykPriceDevice has been deleted");
 
-    // Clear the price refresh interval
-    if (this._priceRefreshInterval) {
-      clearInterval(this._priceRefreshInterval);
-    }
-
     // Clear the current check interval
     if (this._currentCheckInterval) {
       this.homey.clearInterval(this._currentCheckInterval);
     }
 
-    // Clear the smart scheduling timeouts
-    if (this._refreshTimeout) {
-      clearTimeout(this._refreshTimeout);
+    // Stop hour boundary detection
+    if (this.internalStateUpdater) {
+      this.internalStateUpdater.stopHourBoundaryDetection();
     }
 
-    if (this._hourlyTimeout) {
-      clearTimeout(this._hourlyTimeout);
+    // Remove cache update listener - use stored bound reference
+    if (this._handleCacheUpdateBound) {
+      this.driver.removeListener('cache-updated', this._handleCacheUpdateBound);
+    }
+
+    // Remove cache status listener - use stored bound reference
+    if (this._handleCacheStatusBound) {
+      this.driver.removeListener('cache-status-changed', this._handleCacheStatusBound);
     }
   }
 
@@ -151,8 +415,8 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
    * Check if current time is within a maximise or minimise usage period
    */
   checkCurrentUsagePeriod() {
-    // Use existing data if recent (30 seconds) and price window is still valid
-    if (this._priceWindowValid && this._lastUsageCheck && Date.now() - this._lastUsageCheck < 30000) {
+    // Use existing data if recent (30 seconds)
+    if (this._lastUsageCheck && Date.now() - this._lastUsageCheck < 30000) {
       return;
     }
 
@@ -200,429 +464,12 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
     }
   }
 
-  async apiRequest(endpoint, params, apiKey) {
-    const url = new URL(`https://api.pstryk.pl${endpoint}`);
-    Object.keys(params).forEach((key) => url.searchParams.append(key, params[key]));
-
-    const options = {
-      method: "GET",
-      headers: {
-        Authorization: apiKey,
-        "Content-Type": "application/json",
-        "User-Agent": "Homey-PstrykPrice/1.0.0",
-      },
-    };
-
-    // this.log("Params", url);
-
-    return new Promise((resolve, reject) => {
-      const req = https.request(url, options, (res) => {
-        this.log(`HTTP Response Status: ${res.statusCode}`);
-        let data = "";
-
-        res.on("data", (chunk) => {
-          data += chunk;
-        });
-
-        res.on("end", () => {
-          this.log(`HTTP Response Body: ${data}`);
-          try {
-            const jsonData = JSON.parse(data);
-            this.log(options);
-            this.log(jsonData);
-            resolve(jsonData);
-          } catch (error) {
-            reject(new Error("Failed to parse response data"));
-          }
-        });
-      });
-
-      req.on("error", (error) => {
-        reject(error);
-      });
-
-      req.end();
-    });
-  }
-
   /**
-   * Set up the daily price refresh with smart scheduling
+   * Legacy updatePrices method - now forwards to cache-based approach
    */
-  async setupPriceRefresh() {
-    const refreshHour = this.settings.priceRefreshHour || 15;
-
-    this.log(`Setting up daily price refresh at hour ${refreshHour}`);
-
-    const scheduleNextRefresh = () => {
-      const now = new Date();
-      let nextRefresh = new Date(now);
-
-      // Set to next refresh hour with 5-minute window
-      if (now.getHours() >= refreshHour) {
-        nextRefresh.setDate(now.getDate() + 1);
-      }
-      nextRefresh.setHours(refreshHour, 0, 0, 0);
-
-      const timeUntilRefresh = nextRefresh - now;
-
-      this._refreshTimeout = setTimeout(async () => {
-        try {
-          this.log("Daily price refresh triggered");
-          await this.updatePrices();
-          this._hasRefreshedToday = true;
-        } catch (error) {
-          this.error("Daily refresh failed, retrying in 15m", error);
-          this._refreshTimeout = setTimeout(scheduleNextRefresh, 15 * 60 * 1000);
-        }
-        scheduleNextRefresh();
-      }, timeUntilRefresh);
-
-      this.log(`Next daily refresh scheduled in ${Math.round(timeUntilRefresh / (60 * 60 * 1000))} hours`);
-    };
-
-    // Add smart hourly checker
-    const setupHourlyCheck = () => {
-      const now = new Date();
-      const nextHour = new Date(now);
-      nextHour.setHours(now.getHours() + 1);
-      nextHour.setMinutes(0, 0, 0);
-
-      const timeUntilNextHour = nextHour - now;
-
-      this._hourlyTimeout = setTimeout(async () => {
-        try {
-          this.log("Scheduled hourly update");
-          await this.updatePrices();
-        } catch (error) {
-          this.error("Hourly update failed", error);
-        } finally {
-          setupHourlyCheck();
-        }
-      }, timeUntilNextHour);
-
-      this.log(`Next hourly update scheduled in ${Math.round(timeUntilNextHour / (60 * 1000))} minutes`);
-    };
-
-    // Initial setup
-    scheduleNextRefresh();
-    setupHourlyCheck();
-  }
-
-  async updatePrices(retryCount = 0) {
-    try {
-      const now = new Date();
-      const lastUpdate = this._lastPriceUpdate || 0;
-
-      // Cache prices for 5 minutes unless during refresh window
-      // Also check if we still have valid price window data
-      if (
-        now - lastUpdate < 300000 &&
-        this._priceWindowValid &&
-        !(now.getHours() === (this.settings.priceRefreshHour || 15) && now.getMinutes() < 5)
-      ) {
-        this.log("Using cached price data (updated less than 5 minutes ago)");
-        return;
-      }
-
-      var apiKey = this.settings["apiKey"];
-      if (!apiKey) {
-        this.log("API key not set in device");
-        return;
-      }
-
-      this.log("Updating prices from PSTRYK API");
-
-      // Initial check of current usage period
-      if (this._previousBlocks) {
-        this.checkCurrentUsagePeriod();
-      }
-
-      // Track this update time
-      this._lastPriceUpdate = Date.now();
-
-      // Reset window validity flag before fetching new data
-      this._priceWindowValid = false;
-
-      // Invalidate price tiers cache for tied ranking
-      this._invalidatePriceTiersCache();
-
-      // Get prices for next 24 hours and cheapest times
-      const {
-        currentPriceInfo,
-        cheapestHours,
-        cheapestHoursValues,
-        currentHourInCheapestValue,
-        currentHourInCheapest4hValue,
-        currentHourInCheapest12hValue,
-        currentHourInCheapest24hValue,
-        currentHourInCheapest36hValue,
-      } = await this.getCurrentPrice(apiKey);
-
-      // Get daily average price
-      const dailyAvgPrice = await this.getDailyAveragePrice(apiKey);
-      await this.setCapabilityValue("daily_average_price", dailyAvgPrice);
-      this.log("Daily average price updated:", dailyAvgPrice);
-
-      await this.setCapabilityValue("current_hour_price", currentPriceInfo.price);
-      await this.setCapabilityValue("current_hour_value", currentPriceInfo.hour);
-      await this.setCapabilityValue("currently_cheap", currentPriceInfo.is_cheap);
-      await this.setCapabilityValue("currently_expensive", currentPriceInfo.is_expensive);
-      // Log the values to help with debugging
-      this.log(`Setting current_hour_in_cheapest capabilities:`);
-      this.log(`  8h window: ${currentHourInCheapestValue}`);
-      this.log(`  4h window: ${currentHourInCheapest4hValue}`);
-      this.log(`  12h window: ${currentHourInCheapest12hValue}`);
-      this.log(`  24h window: ${currentHourInCheapest24hValue}`);
-      this.log(`  36h window: ${currentHourInCheapest36hValue}`);
-
-      // Set all the capability values
-      await this.setCapabilityValue("current_hour_in_cheapest", currentHourInCheapestValue);
-
-      await this.setCapabilityValue("current_hour_in_cheapest_4h", currentHourInCheapest4hValue);
-
-      await this.setCapabilityValue("current_hour_in_cheapest_12h", currentHourInCheapest12hValue);
-
-      await this.setCapabilityValue("current_hour_in_cheapest_24h", currentHourInCheapest24hValue);
-
-      await this.setCapabilityValue("current_hour_in_cheapest_36h", currentHourInCheapest36hValue);
-
-      // Update new tied price position capability
-      await this.updatePricePositionCapability();
-
-      this.log(currentPriceInfo, cheapestHours, cheapestHoursValues);
-
-      // [
-      //   // Set cheapest hours with fallbacks
-      //   (0, 1, 2),
-      // ].forEach((index) => {
-      //   const hour = cheapestHours[index] || this.homey.__("errors.na");
-      //   this.log(hour);
-      //   this.setCapabilityValue(`cheapest_h${index}`, hour);
-      //   const value = cheapestHoursValues[index] || this.homey.__("errors.na");
-      //   this.log(value);
-      //   this.log(index);
-      //   this.setCapabilityValue(`cheapest_h${index}_value`, value);
-      // });
-
-      await this.setCapabilityValue("cheapest_h0", cheapestHours[0]);
-      await this.setCapabilityValue("cheapest_h0_value", cheapestHoursValues[0]);
-
-      await this.setCapabilityValue("cheapest_h1", cheapestHours[1]);
-      await this.setCapabilityValue("cheapest_h1_value", cheapestHoursValues[1]);
-
-      await this.setCapabilityValue("cheapest_h2", cheapestHours[2]);
-      await this.setCapabilityValue("cheapest_h2_value", cheapestHoursValues[2]);
-      // Get historical prices (last 7 days)
-      // const historicalData = await this.getHistoricalPrices(apiKey);
-      // this.log("Historical data updated");
-
-      // Store current hour for next check
-      this.lastUpdateHour = now.getHours();
-    } catch (error) {
-      this.error("Error updating prices:", error);
-    }
-  }
-
-  async getCurrentPrice(apiKey) {
-    const now = new Date();
-    const windowStart = new Date();
-    windowStart.setUTCHours(windowStart.getUTCHours() - 2, 0, 0, 0); // Rewind to two hours earlier than now in UTC
-
-    const windowEnd = new Date(windowStart);
-    windowEnd.setUTCDate(windowEnd.getUTCDate() + 2); // Extend to 48 hours for better coverage
-
-    const response = await this.apiRequest(
-      "/integrations/pricing/",
-      {
-        resolution: "hour",
-        window_start: windowStart.toISOString(),
-        window_end: windowEnd.toISOString(),
-      },
-      apiKey,
-    );
-
-    // Filter out frames where is_cheap or is_expensive is null
-    const validFrames = response.frames.filter((frame) => {
-      if (frame.is_cheap === null || frame.is_expensive === null) {
-        this.log("Filtered out invalid frame:", frame);
-        return false;
-      }
-      return true;
-    });
-
-    // Check if we have valid price data for at least the next hour
-    this._priceWindowValid = validFrames.some((frame) => {
-      const frameEnd = new Date(frame.end);
-      return frameEnd > new Date(now.getTime() + 3600000); // Has frames for at least 1 hour ahead
-    });
-
-    if (this._priceWindowValid) {
-      this.log("Price window is valid with future data available");
-    } else {
-      this.log("Warning: Price window may not contain enough future data");
-    }
-
-    // Get cheapest hours sorted by price from valid frames
-    const validCheapestFrames = [...validFrames].sort((a, b) => a.price_gross - b.price_gross).slice(0, 3);
-
-    // Update cheapest hours if valid data is available
-    if (validCheapestFrames.length > 0) {
-      this.log(`Found ${validCheapestFrames.length} valid cheapest frames`);
-    } else {
-      this.error("No valid frames found for cheapest hours");
-    }
-
-    // Find current frame based on timestamp instead of is_live flag
-    const currentFrame = validFrames.find((frame) => {
-      const frameStart = new Date(frame.start);
-      const frameEnd = new Date(frame.end);
-      return now >= frameStart && now < frameEnd;
-    });
-    const futureFrames = validFrames.filter(
-      (frame) => new Date(frame.start) > now && new Date(frame.start) <= windowEnd,
-    );
-
-    // Get cheapest hours sorted by price
-    const cheapestFrames = [...futureFrames].sort((a, b) => a.price_gross - b.price_gross).slice(0, 3);
-
-    // Format to local time (HH:mm)
-    const cheapestHours = cheapestFrames.map((frame) => {
-      return new Date(frame.start)
-        .toLocaleString([], {
-          timeZone: this.homey.clock.getTimezone(),
-          hour: "2-digit",
-          minute: "2-digit",
-          day: "2-digit",
-          month: "2-digit",
-          hourCycle: "h23",
-        })
-        .replace(",", "");
-    });
-
-    const cheapestHoursValues = cheapestFrames.map((frame) => {
-      return frame.price_gross;
-    });
-
-    // Create a structured object for current price information
-    const currentPriceInfo = {
-      price: currentFrame?.price_gross || 0,
-      hour:
-        new Date(currentFrame?.start).toLocaleString([], {
-          timeZone: this.homey.clock.getTimezone(),
-          hour: "2-digit",
-          minute: "2-digit",
-          day: "2-digit",
-          month: "2-digit",
-          hourCycle: "h23",
-        }) || "",
-      is_cheap: currentFrame?.is_cheap || false,
-      is_expensive: currentFrame?.is_expensive || false,
-      frame: currentFrame || null,
-    };
-
-    // Helper function to calculate cheapest hour rank for a given window size
-    const calculateCheapestHourRank = (hourWindow) => {
-      let rankValue = 0;
-
-      if (currentFrame) {
-        const now = new Date();
-
-        // Create window starting from current hour
-        const windowEnd = new Date(now);
-        windowEnd.setHours(now.getHours() + hourWindow);
-
-        // Get all frames within the window (including the current hour)
-        const windowFrames = validFrames.filter((frame) => {
-          const frameStart = new Date(frame.start);
-          // Include current hour and next hours up to window size
-          return frameStart >= now && frameStart < windowEnd;
-        });
-
-        // Add current hour to window frames if not already included
-        let framesWithCurrentHour = [...windowFrames];
-        if (!framesWithCurrentHour.some((frame) => frame.start === currentFrame.start)) {
-          framesWithCurrentHour.push(currentFrame);
-        }
-
-        this.log(`Found ${framesWithCurrentHour.length} frames in ${hourWindow}-hour window`);
-
-        // Sort frames by price (cheapest first)
-        const sortedFrames = framesWithCurrentHour.sort((a, b) => a.price_gross - b.price_gross);
-
-        // Get the prices for logging
-        const frameDetails = sortedFrames.map((frame) => {
-          return {
-            start: new Date(frame.start).toLocaleTimeString(),
-            price: frame.price_gross,
-            isCurrent: frame.start === currentFrame.start,
-          };
-        });
-
-        this.log(`Frames in ${hourWindow}-hour window (sorted by price):`, JSON.stringify(frameDetails, null, 2));
-
-        // Find current frame's position in the sorted list
-        if (sortedFrames.length > 0) {
-          const currentFrameIndex = sortedFrames.findIndex((frame) => frame.start === currentFrame.start);
-
-          this.log(`Current frame position in ${hourWindow}-hour window sorted list: ${currentFrameIndex}`);
-
-          if (currentFrameIndex === 0) {
-            // Current hour is the cheapest in the window
-            rankValue = 1;
-          } else if (currentFrameIndex === 1) {
-            // Current hour is the 2nd cheapest in the window
-            rankValue = 2;
-          } else if (currentFrameIndex === 2) {
-            // Current hour is the 3rd cheapest in the window
-            rankValue = 3;
-          }
-        }
-      }
-
-      return rankValue;
-    };
-
-    // Store valid frames and current frame for use in helper functions
-    this._validFrames = validFrames;
-    this._currentFrame = currentFrame;
-
-    // Calculate rank for different time windows
-    let currentHourInCheapestValue = calculateCheapestHourRank(8);
-    let currentHourInCheapest4hValue = calculateCheapestHourRank(4);
-    let currentHourInCheapest12hValue = calculateCheapestHourRank(12);
-    let currentHourInCheapest24hValue = calculateCheapestHourRank(24);
-    let currentHourInCheapest36hValue = calculateCheapestHourRank(36);
-
-    // Find optimal 2+ hour periods for limiting and maximizing electricity usage
-    const { cheapBlocks, expensiveBlocks } = this.findOptimalPeriods(validFrames);
-
-    // Set capability values for optimal periods
-    if (cheapBlocks.length > 0) {
-      await this.setCapabilityValue(
-        "maximise_usage_during",
-        cheapBlocks.map((block) => block.formattedPeriod).join("\n"),
-      );
-    }
-
-    if (expensiveBlocks.length > 0) {
-      await this.setCapabilityValue(
-        "minimise_usage_during",
-        expensiveBlocks.map((block) => block.formattedPeriod).join("\n"),
-      );
-    }
-
-    return {
-      currentPriceInfo,
-      cheapestHours,
-      cheapestHoursValues,
-      cheapBlocks,
-      expensiveBlocks,
-      currentHourInCheapestValue,
-      currentHourInCheapest4hValue,
-      currentHourInCheapest12hValue,
-      currentHourInCheapest24hValue,
-      currentHourInCheapest36hValue,
-    };
+  async updatePrices() {
+    this.log("updatePrices called - requesting cache refresh");
+    await this.requestCacheUpdate();
   }
 
   /**
@@ -1096,81 +943,7 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       .slice(0, 3); // Return top 3
   }
 
-  async getDailyAveragePrice(apiKey) {
-    // Check if we have valid cached data
-    const now = new Date();
-    const currentDate = now.toLocaleDateString("en-CA"); // YYYY-MM-DD format
 
-    if (this._dailyAverageCache.expires > Date.now() && this._dailyAverageCache.date === currentDate) {
-      this.log("Using cached daily average price");
-      return this._dailyAverageCache.value;
-    }
-
-    try {
-      // Clear cache if date changed
-      this._dailyAverageCache = { value: null, expires: null, date: null };
-
-      // Get price refresh hour from settings
-      const refreshHour = this.settings.priceRefreshHour || 15;
-
-      // Calculate expiration time (next refresh hour)
-      const expires = new Date();
-      if (expires.getHours() >= refreshHour) {
-        expires.setDate(expires.getDate() + 1);
-      }
-      expires.setHours(refreshHour, 0, 0, 0);
-
-      // First try to get daily average from daily resolution API
-      const dailyResponse = await this.apiRequest(
-        "/integrations/pricing/",
-        {
-          resolution: "day",
-          window_start: new Date().toISOString().split("T")[0] + "T00:00:00Z",
-          window_end: new Date().toISOString().split("T")[0] + "T23:59:59Z",
-        },
-        apiKey,
-      );
-
-      if (dailyResponse?.frames?.[0]?.price_gross_avg) {
-        this._dailyAverageCache = {
-          value: dailyResponse.frames[0].price_gross_avg,
-          expires: expires.getTime(),
-          date: currentDate,
-        };
-        this.log("Stored daily average from API response");
-        return this._dailyAverageCache.value;
-      }
-
-      // Fallback to hourly calculation only if daily data not available
-      this.log("Calculating daily average from hourly prices");
-      const hourlyResponse = await this.apiRequest(
-        "/integrations/pricing/",
-        {
-          resolution: "hour",
-          window_start: new Date().toISOString().split("T")[0] + "T00:00:00Z",
-          window_end: new Date().toISOString().split("T")[0] + "T23:59:59Z",
-        },
-        apiKey,
-      );
-
-      if (hourlyResponse?.frames?.length > 0) {
-        const sum = hourlyResponse.frames.reduce((total, frame) => total + (frame.price_gross || 0), 0);
-        const avg = sum / hourlyResponse.frames.length;
-
-        this._dailyAverageCache = {
-          value: avg,
-          expires: expires.getTime(),
-          date: currentDate,
-        };
-        return avg;
-      }
-
-      return 0;
-    } catch (error) {
-      this.error("Error getting daily average price:", error);
-      return 0;
-    }
-  }
 
   /**
    * Calculate exact position of current hour when sorted by price
@@ -1179,7 +952,8 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
    * @returns {Object} Object containing position and total hours
    */
   calculateExactPricePosition(hourWindow, cheapestFirst = true) {
-    const validFrames = this._validFrames || [];
+    // Use cached data if available
+    const validFrames = this._cachedData?.currentPrices || this._validFrames || [];
     const currentFrame = this._currentFrame;
 
     if (!currentFrame || validFrames.length === 0) {
@@ -1252,13 +1026,11 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
    */
   calculateTiedPricePosition(hourWindow) {
     try {
-      // Check cache first using existing invalidation patterns
-      if (this._priceWindowValid) {
-        const cached = this._priceTiersCache[hourWindow];
-        if (cached && cached.valid && this._isCacheValid(cached.timestamp)) {
-          this.log("Using cached price position:", cached.currentHourPosition);
-          return Number(cached.currentHourPosition.toFixed(1)); // Consistent precision
-        }
+      // Check cache first
+      const cached = this._priceTiersCache[hourWindow];
+      if (cached && cached.valid && this._isCacheValid(cached.timestamp)) {
+        this.log("Using cached price position:", cached.currentHourPosition);
+        return Number(cached.currentHourPosition.toFixed(1)); // Consistent precision
       }
 
       // Perform tiered ranking calculation with precise floating-point handling
@@ -1272,7 +1044,6 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
     } catch (error) {
       this.error("Error calculating tied price position:", error);
       // Fallback to safe default with consistent precision
-      // let's return last one just in case.
       return 12.0;
     }
   }
@@ -1312,7 +1083,8 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
    * @returns {number} Position value
    */
   _calculateTiedPosition(hourWindow) {
-    const validFrames = this._validFrames || [];
+    // Use cached data if available
+    const validFrames = this._cachedData?.currentPrices || this._validFrames || [];
     const currentFrame = this._currentFrame;
 
     if (!currentFrame || validFrames.length === 0) {
@@ -1421,6 +1193,26 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       this.log("Updated current_hour_price_position capability:", position);
     } catch (error) {
       this.error("Error updating current_hour_price_position capability:", error);
+    }
+  }
+
+  /**
+   * Flow action handler for manual price data refresh
+   */
+  async onActionRefreshPriceData(args, state) {
+    try {
+      this.log("Manual price data refresh triggered via flow action");
+      
+      // Call the new immediate refresh method from API orchestrator
+      // This method handles rate limiting centrally and provides user feedback
+      await this.driver.apiOrchestrator.requestManualRefreshImmediate();
+      
+      this.log("Manual price data refresh completed successfully");
+      
+      return true;
+    } catch (error) {
+      this.error("Error in manual price data refresh:", error);
+      throw error; // Re-throw to let Homey handle the error in the flow
     }
   }
 };

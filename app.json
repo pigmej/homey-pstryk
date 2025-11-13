@@ -1590,6 +1590,22 @@
           }
         ],
         "id": "get_hour_position_expensive_to_cheapest"
+      },
+      {
+        "id": "refresh_price_data",
+        "title": {
+          "en": "Refresh price data"
+        },
+        "desc": {
+          "en": "Manually refresh the price data cache"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=pstryk_price"
+          }
+        ]
       }
     ]
   },
@@ -1798,6 +1814,19 @@
           }
         },
         {
+          "id": "priceRefreshHour",
+          "type": "number",
+          "label": {
+            "en": "Price Refresh Hour"
+          },
+          "value": 15,
+          "min": 0,
+          "max": 23,
+          "hint": {
+            "en": "Hour of day when prices are refreshed (0-23, default 15 for 3:00 PM)"
+          }
+        },
+        {
           "id": "debugMode",
           "type": "checkbox",
           "label": {
@@ -1812,6 +1841,19 @@
     }
   ],
   "capabilities": {
+    "cache_status": {
+      "type": "string",
+      "title": {
+        "en": "Cache Status"
+      },
+      "desc": {
+        "en": "Shows the current status of the price data cache (fresh, stale, error)"
+      },
+      "uiComponent": "sensor",
+      "getable": true,
+      "setable": false,
+      "icon": "/assets/images/refresh.svg"
+    },
     "cheapest_h0": {
       "title": {
         "en": "next cheapest hour"

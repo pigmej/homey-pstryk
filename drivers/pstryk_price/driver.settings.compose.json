@@ -30,6 +30,15 @@
         "hint": { "en": "Maximum price difference (as a percentage) allowed when grouping hours for maximize/minimize periods" }
     },
     {
+        "id": "priceRefreshHour",
+        "type": "number",
+        "label": { "en": "Price Refresh Hour" },
+        "value": 15,
+        "min": 0,
+        "max": 23,
+        "hint": { "en": "Hour of day when prices are refreshed (0-23, default 15 for 3:00 PM)" }
+    },
+    {
         "id": "debugMode",
         "type": "checkbox",
         "label": { "en": "Debug Mode" },

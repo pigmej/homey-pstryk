@@ -1,0 +1,13 @@
+{
+  "type": "string",
+  "title": {
+    "en": "Cache Status"
+  },
+  "desc": {
+    "en": "Shows the current status of the price data cache (fresh, stale, error)"
+  },
+  "uiComponent": "sensor",
+  "getable": true,
+  "setable": false,
+  "icon": "/assets/images/refresh.svg"
+}

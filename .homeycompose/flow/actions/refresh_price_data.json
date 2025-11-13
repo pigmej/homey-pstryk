@@ -1,0 +1,16 @@
+{
+  "id": "refresh_price_data",
+  "title": {
+    "en": "Refresh price data"
+  },
+  "desc": {
+    "en": "Manually refresh the price data cache"
+  },
+  "args": [
+    {
+      "name": "device",
+      "type": "device",
+      "filter": "driver_id=pstryk_price"
+    }
+  ]
+}

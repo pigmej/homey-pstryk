@@ -1,0 +1,50 @@
+{
+    "title": {
+        "en": "Current hour in cheapest (8h window)"
+    },
+    "desc": {
+        "en": "Indicates if current hour is among the 3 cheapest hours in the next 8 hour window (0=not cheapest, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest)"
+    },
+    "tokens": [
+        {
+            "name": "current_hour_in_cheapest",
+            "type": "number",
+            "title": {
+                "en": "cheapest rank"
+            },
+            "example": 1
+        }
+    ],
+    "type": "number",
+    "min": 0,
+    "max": 3,
+    "getable": true,
+    "setable": false,
+    "insights": true,
+    "uiComponent": "sensor",
+    "color": {
+        "type": "continuous",
+        "value": {
+            "minimum": 0,
+            "maximum": 3,
+            "stops": [
+                {
+                    "value": 0,
+                    "color": "#808080"
+                },
+                {
+                    "value": 1,
+                    "color": "#0cce6b"
+                },
+                {
+                    "value": 2,
+                    "color": "#43c3ff"
+                },
+                {
+                    "value": 3,
+                    "color": "#ffd00a"
+                }
+            ]
+        }
+    }
+}
