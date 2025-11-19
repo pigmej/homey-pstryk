@@ -95,31 +95,31 @@ The app provides the following device capabilities:
 These cards trigger flows when specific events occur:
 
 #### Current hour in cheapest status changed (12h window)
-No description available
+Triggered when the current hour's rank among the 3 cheapest hours in the next 12-hour window changes (0=not among cheapest, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest)
 
 **Tokens:**
 - `current_hour_in_cheapest_12h` (number): Cheapest rank
 
 #### Current hour in cheapest status changed (24h window)
-No description available
+Triggered when the current hour's rank among the 3 cheapest hours in the next 24-hour window changes (0=not among cheapest, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest)
 
 **Tokens:**
 - `current_hour_in_cheapest_24h` (number): Cheapest rank
 
 #### Current hour in cheapest status changed (36h window)
-No description available
+Triggered when the current hour's rank among the 3 cheapest hours in the next 36-hour window changes (0=not among cheapest, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest)
 
 **Tokens:**
 - `current_hour_in_cheapest_36h` (number): Cheapest rank
 
 #### Current hour in cheapest status changed (4h window)
-No description available
+Triggered when the current hour's rank among the 3 cheapest hours in the next 4-hour window changes (0=not among cheapest, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest)
 
 **Tokens:**
 - `current_hour_in_cheapest_4h` (number): Cheapest rank
 
 #### Current hour in cheapest status changed (8h window)
-No description available
+Triggered when the current hour's rank among the 3 cheapest hours in the next 8-hour window changes (0=not among cheapest, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest)
 
 **Tokens:**
 - `current_hour_in_cheapest` (number): Cheapest rank
@@ -138,57 +138,57 @@ These cards check conditions in your flows:
 
 #### Price Conditions
 
-- **Current price compared to value**: No description available
-- **Current price compared to daily average**: No description available
+- **Current price compared to value**: Check if current electricity price is greater than, less than, or equal to a specific value
+- **Current price compared to daily average**: Check if current electricity price is greater than, less than, or equal to today's daily average price
 
 #### Position Conditions
 
 - **Current hour price position vs Nth threshold**: Compare current hour price position against a threshold value
-- **Current hour position (cheapest to expensive)**: No description available
-- **Current hour position (expensive to cheapest)**: No description available
+- **Current hour position (cheapest to expensive)**: Check current hour's position when all hours in the window are sorted from cheapest to most expensive
+- **Current hour position (expensive to cheapest)**: Check current hour's position when all hours in the window are sorted from most expensive to cheapest
 
 #### Period Conditions
 
-- **Is current price cheap**: No description available
-- **Is current price expensive**: No description available
-- **Is maximise usage period active**: No description available
-- **Is minimise usage period active**: No description available
-- **Is normal usage period active**: No description available
+- **Is current price cheap**: Check if the current electricity price is considered cheap (based on PSTRYK's price classification)
+- **Is current price expensive**: Check if the current electricity price is considered expensive (based on PSTRYK's price classification)
+- **Is maximise usage period active**: Check if current time falls within one of the recommended maximise usage periods (cheap electricity periods)
+- **Is minimise usage period active**: Check if current time falls within one of the recommended minimise usage periods (expensive electricity periods)
+- **Is normal usage period active**: Check if current time is in a normal period (neither cheap nor expensive)
 
 #### Ranking Conditions
 
-- **Current hour is among cheapest (8h window)**: No description available
-- **Current hour is among cheapest (12h window)**: No description available
-- **Current hour is among cheapest (24h window)**: No description available
-- **Current hour is among cheapest (36h window)**: No description available
-- **Current hour is among cheapest (4h window)**: No description available
+- **Current hour is among cheapest (8h window)**: Check if current hour ranks among the cheapest hours in the 8-hour window (from now)
+- **Current hour is among cheapest (12h window)**: Check if current hour ranks among the cheapest hours in the 12-hour window (from now)
+- **Current hour is among cheapest (24h window)**: Check if current hour ranks among the cheapest hours in the 24-hour window (from now)
+- **Current hour is among cheapest (36h window)**: Check if current hour ranks among the cheapest hours in the 36-hour window (from now)
+- **Current hour is among cheapest (4h window)**: Check if current hour ranks among the cheapest hours in the 4-hour window (from now)
 
 ### Actions
 
 These cards perform actions in your flows:
 
 #### Get current hour cheapest rank (8h window)
-No description available
+Returns the current hour's rank among cheapest hours in the 8-hour window (0=not among top 3, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest)
 
 **Arguments:**
 
 #### Get current hour cheapest rank (12h window)
-No description available
+Returns the current hour's rank among cheapest hours in the 12-hour window (0=not among top 3, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest)
 
 **Arguments:**
 
 #### Get current hour cheapest rank (24h window)
-No description available
+Returns the current hour's rank among cheapest hours in the 24-hour window (0=not among top 3, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest)
 
 **Arguments:**
 
 #### Get current hour cheapest rank (36h window)
-No description available
+Returns the current hour's rank among cheapest hours in the 36-hour window (0=not among top 3, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest)
 
 **Arguments:**
 
 #### Get current hour cheapest rank (4h window)
-No description available
+Returns the current hour's rank among cheapest hours in the 4-hour window (0=not among top 3, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest)
 
 **Arguments:**
 
@@ -199,13 +199,13 @@ Get the current hour's price position for a specific time window
 - `window` (dropdown): window
 
 #### Get current hour position (cheapest to expensive)
-No description available
+Returns the current hour's position when sorted from cheapest to most expensive in the specified time window
 
 **Arguments:**
 - `window` (dropdown): window
 
 #### Get current hour position (expensive to cheapest)
-No description available
+Returns the current hour's position when sorted from most expensive to cheapest in the specified time window
 
 **Arguments:**
 - `window` (dropdown): window

@@ -3,6 +3,9 @@
     "title": {
         "en": "Current hour is among cheapest (12h window)"
     },
+    "desc": {
+        "en": "Check if current hour ranks among the cheapest hours in the 12-hour window (from now)"
+    },
     "titleFormatted": {
         "en": "Current hour is [[rank]] among cheapest hours in 12-hour window"
     },

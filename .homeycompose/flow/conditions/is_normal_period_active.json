@@ -3,6 +3,9 @@
     "title": {
         "en": "Is normal usage period active"
     },
+    "desc": {
+        "en": "Check if current time is in a normal period (neither cheap nor expensive)"
+    },
     "titleFormatted": {
         "en": "Current time is in a normal usage period"
     },

@@ -3,6 +3,9 @@
     "title": {
         "en": "Current price compared to daily average"
     },
+    "desc": {
+        "en": "Check if current electricity price is greater than, less than, or equal to today's daily average price"
+    },
     "titleFormatted": {
         "en": "Current price is [[operator]] than daily average"
     },

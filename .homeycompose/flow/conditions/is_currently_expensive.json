@@ -3,6 +3,9 @@
     "title": {
         "en": "Is current price expensive"
     },
+    "desc": {
+        "en": "Check if the current electricity price is considered expensive (based on PSTRYK's price classification)"
+    },
     "titleFormatted": {
         "en": "Current electricity price is expensive"
     },

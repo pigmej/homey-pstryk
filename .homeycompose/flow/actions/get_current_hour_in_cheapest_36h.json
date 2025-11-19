@@ -3,6 +3,9 @@
   "title": {
     "en": "Get current hour cheapest rank (36h window)"
   },
+  "desc": {
+    "en": "Returns the current hour's rank among cheapest hours in the 36-hour window (0=not among top 3, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest)"
+  },
   "titleFormatted": {
     "en": "Get current hour's rank among cheapest hours in 36-hour window"
   },

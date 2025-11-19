@@ -2,6 +2,9 @@
   "title": {
     "en": "Current hour position (cheapest to expensive)"
   },
+  "desc": {
+    "en": "Check current hour's position when all hours in the window are sorted from cheapest to most expensive"
+  },
   "titleFormatted": {
     "en": "Current hour is at position [[operator]] [[position]] when sorted cheapest to expensive in [[window]]-hour window"
   },

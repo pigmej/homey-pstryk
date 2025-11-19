@@ -3,6 +3,9 @@
     "title": {
         "en": "Is minimise usage period active"
     },
+    "desc": {
+        "en": "Check if current time falls within one of the recommended minimise usage periods (expensive electricity periods)"
+    },
     "titleFormatted": {
         "en": "Current time is in a minimise usage period"
     },

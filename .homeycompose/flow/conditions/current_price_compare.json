@@ -3,6 +3,9 @@
     "title": {
         "en": "Current price compared to value"
     },
+    "desc": {
+        "en": "Check if current electricity price is greater than, less than, or equal to a specific value"
+    },
     "titleFormatted": {
         "en": "Current price is [[operator]] than [[value]]"
     },

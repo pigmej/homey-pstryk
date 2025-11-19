@@ -3,6 +3,9 @@
   "title": {
     "en": "Current hour in cheapest status changed (8h window)"
   },
+  "desc": {
+    "en": "Triggered when the current hour's rank among the 3 cheapest hours in the next 8-hour window changes (0=not among cheapest, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest)"
+  },
   "tokens": [
     {
       "name": "current_hour_in_cheapest",

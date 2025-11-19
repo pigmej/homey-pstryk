@@ -3,6 +3,9 @@
     "title": {
         "en": "Is maximise usage period active"
     },
+    "desc": {
+        "en": "Check if current time falls within one of the recommended maximise usage periods (cheap electricity periods)"
+    },
     "titleFormatted": {
         "en": "Current time is in a maximise usage period"
     },
