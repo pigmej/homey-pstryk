@@ -100,14 +100,6 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
     // Initialize internal state updater
     this.internalStateUpdater = new InternalStateUpdater(this);
 
-    // Add periodic check for current usage period (reduced frequency)
-    this._currentCheckInterval = this.homey.setInterval(
-      () => {
-        this.checkCurrentUsagePeriod();
-      },
-      5 * 60 * 1000,
-    ); // Check every 5 minutes
-
     // Start hour boundary detection
     this.internalStateUpdater.startHourBoundaryDetection();
 
@@ -389,11 +381,6 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
    */
   async onDeleted() {
     this.log("PstrykPriceDevice has been deleted");
-
-    // Clear the current check interval
-    if (this._currentCheckInterval) {
-      this.homey.clearInterval(this._currentCheckInterval);
-    }
 
     // Stop hour boundary detection
     if (this.internalStateUpdater) {
