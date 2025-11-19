@@ -21,7 +21,10 @@ function readJSONDir(dirPath) {
       .filter((f) => f.endsWith(".json"))
       .map((f) => {
         const content = readJSON(path.join(dirPath, f));
-        return content ? { filename: f, ...content } : null;
+        if (!content) return null;
+        // Extract id from filename (remove .json extension)
+        const id = f.replace(".json", "");
+        return { filename: f, id, ...content };
       })
       .filter(Boolean);
   } catch (error) {

@@ -33,13 +33,60 @@ The app provides the following device capabilities:
 
 | Capability | Description | Type |
 |------------|-------------|------|
+| `current_hour_price` | Current electricity price | number |
 | `current_hour_price_position` | Current hour's price position when sorted by price (identical prices get same position) | number |
+| `current_hour_price_vs_3rd_cheapest_8h` | Indicates if current hour is among the 3 cheapest hours in the next 8 hour window (0=not cheapest, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest) | number |
+| `current_hour_value` | current hour value, use this to cross check that everything works as expected | string |
+| `daily_average_price` | Average electricity price value | number |
+
+### Cheapest Hours
+
+| Capability | Description | Type |
+|------------|-------------|------|
+| `cheapest_h0` | next chaepest hour starts at | string |
+| `cheapest_h0_value` | Next cheapest electricity price value | number |
+| `cheapest_h1` | 2nd next chaepest hour starts at | string |
+| `cheapest_h1_value` | 2nd cheapest electricity price value | number |
+| `cheapest_h2` | 3rd next chaepest hour starts at | string |
+| `cheapest_h2_value` | 3rd cheapest price value | number |
+
+### Usage Periods
+
+| Capability | Description | Type |
+|------------|-------------|------|
+| `currently_cheap` | Is the current price cheap or no | boolean |
+| `currently_expensive` | Is the current price expensive or no | boolean |
+| `maximise_usage_during` | Maximise usage during these hours, 3 periods, each at least 1 hour long | string |
+| `maximise_usage_now` | Current time is within a maximise usage period | boolean |
+| `minimise_usage_during` | Minimise usage during these hours, 3 periods, each at least 1 hour long | string |
+| `minimise_usage_now` | Current time is within a minimise usage period | boolean |
 
 ### Ranking & Position
 
 | Capability | Description | Type |
 |------------|-------------|------|
+| `current_hour_in_cheapest` | Indicates if current hour is among the 3 cheapest hours in the next 8 hour window (0=not cheapest, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest) | number |
+| `current_hour_in_cheapest_12h` | Indicates if current hour is among the 3 cheapest hours in the next 12 hour window (0=not cheapest, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest) | number |
+| `current_hour_in_cheapest_24h` | Indicates if current hour is among the 3 cheapest hours in the next 24 hour window (0=not cheapest, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest) | number |
+| `current_hour_in_cheapest_36h` | Indicates if current hour is among the 3 cheapest hours in the next 36 hour window (0=not cheapest, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest) | number |
+| `current_hour_in_cheapest_4h` | Indicates if current hour is among the 3 cheapest hours in the next 4 hour window (0=not cheapest, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest) | number |
 | `current_hour_price_position` | Current hour's price position when sorted by price (identical prices get same position) | number |
+
+### System
+
+| Capability | Description | Type |
+|------------|-------------|------|
+| `cache_status` | Shows the current status of the price data cache (fresh, stale, error) | string |
+| `daily_average_price` | Average electricity price value | number |
+
+### Meter Measurements
+
+| Capability | Description | Type |
+|------------|-------------|------|
+| `measure_current` | Current in Amperes | number |
+| `measure_frequency` | Frequency in Hertz | number |
+| `measure_power` | Power in Watts | number |
+| `measure_voltage` | Voltage in Volts | number |
 
 ## Flow Cards
 
@@ -97,6 +144,8 @@ These cards check conditions in your flows:
 #### Position Conditions
 
 - **Current hour price position vs Nth threshold**: Compare current hour price position against a threshold value
+- **Current hour position (cheapest to expensive)**: No description available
+- **Current hour position (expensive to cheapest)**: No description available
 
 #### Period Conditions
 
@@ -196,7 +245,7 @@ Manually refresh the price data cache
 **WHEN** Minimise period is active
 **THEN** Send notification "Electricity is expensive now"
 
-### Smart heating control
+### Smart-ish EV charger control
 
 **WHEN** Current hour price position changed
 **AND** Current hour price position <= 3 (24h window)
