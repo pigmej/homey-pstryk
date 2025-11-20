@@ -248,13 +248,14 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
     const calculateCheapestHourRank = (hourWindow) => {
       if (!currentFrame) return 0;
 
-      const now = new Date();
+      const currentHourStart = this._getCurrentHourStart();
+      const now = new Date(); // Still needed for windowEnd calculation
       const windowEnd = new Date(now);
       windowEnd.setHours(now.getHours() + hourWindow);
 
       const windowFrames = currentPrices.filter((frame) => {
         const frameStart = new Date(frame.start);
-        return frameStart >= now && frameStart < windowEnd;
+        return frameStart >= currentHourStart && frameStart < windowEnd;
       });
 
       let framesWithCurrentHour = [...windowFrames];
@@ -947,14 +948,15 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       return { position: 0, totalHours: 0 };
     }
 
-    const now = new Date();
+    const currentHourStart = this._getCurrentHourStart();
+    const now = new Date(); // Still needed for windowEnd calculation
     const windowEnd = new Date(now);
     windowEnd.setHours(now.getHours() + hourWindow);
 
     // Get all frames within the window (including the current hour)
     const windowFrames = validFrames.filter((frame) => {
       const frameStart = new Date(frame.start);
-      return frameStart >= now && frameStart < windowEnd;
+      return frameStart >= currentHourStart && frameStart < windowEnd;
     });
 
     // Add current hour to window frames if not already included
@@ -1079,14 +1081,15 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       return hourWindow;  // Return worst position for this window
     }
 
-    const now = new Date();
+    const currentHourStart = this._getCurrentHourStart();
+    const now = new Date(); // Still needed for windowEnd calculation
     const windowEnd = new Date(now);
     windowEnd.setHours(now.getHours() + hourWindow);
 
     // Get all frames within the window (including the current hour)
     const windowFrames = validFrames.filter((frame) => {
       const frameStart = new Date(frame.start);
-      return frameStart >= now && frameStart < windowEnd;
+      return frameStart >= currentHourStart && frameStart < windowEnd;
     });
 
     // Add current hour to window frames if not already included
@@ -1183,6 +1186,32 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
     } catch (error) {
       this.error("Error updating current_hour_price_position capability:", error);
     }
+  }
+
+  /**
+   * Get the start of the current hour (00 minutes, 00 seconds, 00 milliseconds)
+   * This ensures consistent time window filtering across all position calculations,
+   * guaranteeing the current hour is always included in the analysis window
+   * regardless of when the calculation runs during the hour.
+   * 
+   * @returns {Date} Start of the current hour
+   * @private
+   */
+  _getCurrentHourStart() {
+    const now = new Date();
+    const currentHourStart = new Date(now);
+    currentHourStart.setMinutes(0, 0, 0);
+    
+    // Debug logging in development
+    if (this.getSetting('debugMode')) {
+      this.log('Time reference:', {
+        now: now.toISOString(),
+        currentHourStart: currentHourStart.toISOString(),
+        difference: `${now.getMinutes()} minutes into hour`
+      });
+    }
+    
+    return currentHourStart;
   }
 
   /**

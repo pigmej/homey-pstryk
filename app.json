@@ -30,6 +30,9 @@
         "title": {
           "en": "Current hour in cheapest status changed (12h window)"
         },
+        "desc": {
+          "en": "Triggered when the current hour's rank among the 3 cheapest hours in the next 12-hour window changes (0=not among cheapest, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest)"
+        },
         "tokens": [
           {
             "name": "current_hour_in_cheapest_12h",
@@ -52,6 +55,9 @@
         "id": "current_hour_in_cheapest_24h_changed",
         "title": {
           "en": "Current hour in cheapest status changed (24h window)"
+        },
+        "desc": {
+          "en": "Triggered when the current hour's rank among the 3 cheapest hours in the next 24-hour window changes (0=not among cheapest, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest)"
         },
         "tokens": [
           {
@@ -76,6 +82,9 @@
         "title": {
           "en": "Current hour in cheapest status changed (36h window)"
         },
+        "desc": {
+          "en": "Triggered when the current hour's rank among the 3 cheapest hours in the next 36-hour window changes (0=not among cheapest, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest)"
+        },
         "tokens": [
           {
             "name": "current_hour_in_cheapest_36h",
@@ -99,6 +108,9 @@
         "title": {
           "en": "Current hour in cheapest status changed (4h window)"
         },
+        "desc": {
+          "en": "Triggered when the current hour's rank among the 3 cheapest hours in the next 4-hour window changes (0=not among cheapest, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest)"
+        },
         "tokens": [
           {
             "name": "current_hour_in_cheapest_4h",
@@ -121,6 +133,9 @@
         "id": "current_hour_in_cheapest_changed",
         "title": {
           "en": "Current hour in cheapest status changed (8h window)"
+        },
+        "desc": {
+          "en": "Triggered when the current hour's rank among the 3 cheapest hours in the next 8-hour window changes (0=not among cheapest, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest)"
         },
         "tokens": [
           {
@@ -615,6 +630,9 @@
         "title": {
           "en": "Current price compared to value"
         },
+        "desc": {
+          "en": "Check if current electricity price is greater than, less than, or equal to a specific value"
+        },
         "titleFormatted": {
           "en": "Current price is [[operator]] than [[value]]"
         },
@@ -665,6 +683,9 @@
         "title": {
           "en": "Current price compared to daily average"
         },
+        "desc": {
+          "en": "Check if current electricity price is greater than, less than, or equal to today's daily average price"
+        },
         "titleFormatted": {
           "en": "Current price is [[operator]] than daily average"
         },
@@ -706,6 +727,9 @@
       {
         "title": {
           "en": "Current hour position (cheapest to expensive)"
+        },
+        "desc": {
+          "en": "Check current hour's position when all hours in the window are sorted from cheapest to most expensive"
         },
         "titleFormatted": {
           "en": "Current hour is at position [[operator]] [[position]] when sorted cheapest to expensive in [[window]]-hour window"
@@ -809,6 +833,9 @@
       {
         "title": {
           "en": "Current hour position (expensive to cheapest)"
+        },
+        "desc": {
+          "en": "Check current hour's position when all hours in the window are sorted from most expensive to cheapest"
         },
         "titleFormatted": {
           "en": "Current hour is at position [[operator]] [[position]] when sorted expensive to cheapest in [[window]]-hour window"
@@ -914,6 +941,9 @@
         "title": {
           "en": "Current hour is among cheapest (8h window)"
         },
+        "desc": {
+          "en": "Check if current hour ranks among the cheapest hours in the 8-hour window (from now)"
+        },
         "titleFormatted": {
           "en": "Current hour is [[rank]] among cheapest hours in 8-hour window"
         },
@@ -968,6 +998,9 @@
         "id": "is_current_hour_in_cheapest_12h",
         "title": {
           "en": "Current hour is among cheapest (12h window)"
+        },
+        "desc": {
+          "en": "Check if current hour ranks among the cheapest hours in the 12-hour window (from now)"
         },
         "titleFormatted": {
           "en": "Current hour is [[rank]] among cheapest hours in 12-hour window"
@@ -1024,6 +1057,9 @@
         "title": {
           "en": "Current hour is among cheapest (24h window)"
         },
+        "desc": {
+          "en": "Check if current hour ranks among the cheapest hours in the 24-hour window (from now)"
+        },
         "titleFormatted": {
           "en": "Current hour is [[rank]] among cheapest hours in 24-hour window"
         },
@@ -1078,6 +1114,9 @@
         "id": "is_current_hour_in_cheapest_36h",
         "title": {
           "en": "Current hour is among cheapest (36h window)"
+        },
+        "desc": {
+          "en": "Check if current hour ranks among the cheapest hours in the 36-hour window (from now)"
         },
         "titleFormatted": {
           "en": "Current hour is [[rank]] among cheapest hours in 36-hour window"
@@ -1134,6 +1173,9 @@
         "title": {
           "en": "Current hour is among cheapest (4h window)"
         },
+        "desc": {
+          "en": "Check if current hour ranks among the cheapest hours in the 4-hour window (from now)"
+        },
         "titleFormatted": {
           "en": "Current hour is [[rank]] among cheapest hours in 4-hour window"
         },
@@ -1189,6 +1231,9 @@
         "title": {
           "en": "Is current price cheap"
         },
+        "desc": {
+          "en": "Check if the current electricity price is considered cheap (based on PSTRYK's price classification)"
+        },
         "titleFormatted": {
           "en": "Current electricity price is cheap"
         },
@@ -1204,6 +1249,9 @@
         "id": "is_currently_expensive",
         "title": {
           "en": "Is current price expensive"
+        },
+        "desc": {
+          "en": "Check if the current electricity price is considered expensive (based on PSTRYK's price classification)"
         },
         "titleFormatted": {
           "en": "Current electricity price is expensive"
@@ -1221,6 +1269,9 @@
         "title": {
           "en": "Is maximise usage period active"
         },
+        "desc": {
+          "en": "Check if current time falls within one of the recommended maximise usage periods (cheap electricity periods)"
+        },
         "titleFormatted": {
           "en": "Current time is in a maximise usage period"
         },
@@ -1237,6 +1288,9 @@
         "title": {
           "en": "Is minimise usage period active"
         },
+        "desc": {
+          "en": "Check if current time falls within one of the recommended minimise usage periods (expensive electricity periods)"
+        },
         "titleFormatted": {
           "en": "Current time is in a minimise usage period"
         },
@@ -1252,6 +1306,9 @@
         "id": "is_normal_period_active",
         "title": {
           "en": "Is normal usage period active"
+        },
+        "desc": {
+          "en": "Check if current time is in a normal period (neither cheap nor expensive)"
         },
         "titleFormatted": {
           "en": "Current time is in a normal usage period"
@@ -1270,6 +1327,9 @@
         "id": "get_current_hour_in_cheapest",
         "title": {
           "en": "Get current hour cheapest rank (8h window)"
+        },
+        "desc": {
+          "en": "Returns the current hour's rank among cheapest hours in the 8-hour window (0=not among top 3, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest)"
         },
         "titleFormatted": {
           "en": "Get current hour's rank among cheapest hours in 8-hour window"
@@ -1297,6 +1357,9 @@
         "title": {
           "en": "Get current hour cheapest rank (12h window)"
         },
+        "desc": {
+          "en": "Returns the current hour's rank among cheapest hours in the 12-hour window (0=not among top 3, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest)"
+        },
         "titleFormatted": {
           "en": "Get current hour's rank among cheapest hours in 12-hour window"
         },
@@ -1322,6 +1385,9 @@
         "id": "get_current_hour_in_cheapest_24h",
         "title": {
           "en": "Get current hour cheapest rank (24h window)"
+        },
+        "desc": {
+          "en": "Returns the current hour's rank among cheapest hours in the 24-hour window (0=not among top 3, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest)"
         },
         "titleFormatted": {
           "en": "Get current hour's rank among cheapest hours in 24-hour window"
@@ -1349,6 +1415,9 @@
         "title": {
           "en": "Get current hour cheapest rank (36h window)"
         },
+        "desc": {
+          "en": "Returns the current hour's rank among cheapest hours in the 36-hour window (0=not among top 3, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest)"
+        },
         "titleFormatted": {
           "en": "Get current hour's rank among cheapest hours in 36-hour window"
         },
@@ -1374,6 +1443,9 @@
         "id": "get_current_hour_in_cheapest_4h",
         "title": {
           "en": "Get current hour cheapest rank (4h window)"
+        },
+        "desc": {
+          "en": "Returns the current hour's rank among cheapest hours in the 4-hour window (0=not among top 3, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest)"
         },
         "titleFormatted": {
           "en": "Get current hour's rank among cheapest hours in 4-hour window"
@@ -1449,6 +1521,9 @@
         "title": {
           "en": "Get current hour position (cheapest to expensive)"
         },
+        "desc": {
+          "en": "Returns the current hour's position when sorted from cheapest to most expensive in the specified time window"
+        },
         "titleFormatted": {
           "en": "Get current hour's position when sorted cheapest to expensive in [[window]]-hour window"
         },
@@ -1521,6 +1596,9 @@
       {
         "title": {
           "en": "Get current hour position (expensive to cheapest)"
+        },
+        "desc": {
+          "en": "Returns the current hour's position when sorted from most expensive to cheapest in the specified time window"
         },
         "titleFormatted": {
           "en": "Get current hour's position when sorted expensive to cheapest in [[window]]-hour window"
