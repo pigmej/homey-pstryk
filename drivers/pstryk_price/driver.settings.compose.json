@@ -2,7 +2,7 @@
     {
         "id": "apiKey",
         "type": "text",
-        "label": { "en": "Api KEY" },
+        "label": { "en": "API Token" },
         "value": ""
     },
     {

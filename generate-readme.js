@@ -172,13 +172,13 @@ function generateReadme() {
   readme += `## Installation\n\n`;
   readme += `1. Install the app from the Homey App Store\n`;
   readme += `2. Add a new PSTRYK Price device\n`;
-  readme += `3. Configure your PSTRYK API key in the device settings\n`;
+  readme += `3. Configure your PSTRYK API token in the device settings\n`;
   readme += `4. Optionally configure the price refresh hour (default: 15:00)\n\n`;
 
   // Configuration
   readme += `## Configuration\n\n`;
   readme += `### Device Settings\n\n`;
-  readme += `- **API Key**: Your PSTRYK API key (required)\n`;
+  readme += `- **API Token**: Your PSTRYK API token (required)\n`;
   readme += `- **Price Refresh Hour**: Hour when price data should be refreshed (default: 15)\n`;
   readme += `- **Price Difference Threshold**: Percentage threshold for grouping similar prices (default: 10%)\n`;
   readme += `- **Today Label**: Custom label for today's date (default: "Today")\n`;

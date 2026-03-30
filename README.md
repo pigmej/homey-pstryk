@@ -219,14 +219,14 @@ Manually refresh the price data cache
 
 1. Install the app from the Homey App Store
 2. Add a new PSTRYK Price device
-3. Configure your PSTRYK API key in the device settings
+3. Configure your PSTRYK API token in the device settings
 4. Optionally configure the price refresh hour (default: 15:00)
 
 ## Configuration
 
 ### Device Settings
 
-- **API Key**: Your PSTRYK API key (required)
+- **API Token**: Your PSTRYK API token (required)
 - **Price Refresh Hour**: Hour when price data should be refreshed (default: 15)
 - **Price Difference Threshold**: Percentage threshold for grouping similar prices (default: 10%)
 - **Today Label**: Custom label for today's date (default: "Today")

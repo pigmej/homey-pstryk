@@ -1849,7 +1849,7 @@
           "id": "apiKey",
           "type": "text",
           "label": {
-            "en": "Api KEY"
+            "en": "API Token"
           },
           "value": ""
         },

@@ -2,6 +2,12 @@
 
 const Homey = require("homey");
 const https = require("https");
+const {
+  UNIFIED_PRICING_ENDPOINT,
+  buildUnifiedPricingQuery,
+  normalizeUnifiedPricingResponse,
+  calculateDailyAverage,
+} = require("./pricing-api");
 
 /**
  * Price Data Cache class for storing and validating price data
@@ -42,11 +48,11 @@ class PriceDataCache {
   }
 
   updateCache(data) {
-    this.currentPrices = data.currentPrices || [];
-    this.dailyAverage = data.dailyAverage || null;
+    this.currentPrices = data.currentPrices ?? [];
+    this.dailyAverage = data.dailyAverage ?? null;
     this.lastUpdated = Date.now();
-    this.expiresAt = data.expiresAt || null;
-    this.date = data.date || null;
+    this.expiresAt = data.expiresAt ?? null;
+    this.date = data.date ?? null;
     this.isValid = true;
   }
 
@@ -90,7 +96,7 @@ class APIOrchestrator {
     return false;
   }
 
-  async fetchFreshData(apiKey) {
+  async fetchFreshData(authToken) {
     const now = new Date();
     const windowStart = new Date();
     windowStart.setUTCHours(windowStart.getUTCHours() - 2, 0, 0, 0);
@@ -99,20 +105,18 @@ class APIOrchestrator {
     windowEnd.setUTCDate(windowEnd.getUTCDate() + 2);
 
     try {
-      // Single consolidated API call
-      const response = await this._apiRequest("/integrations/pricing/", {
-        resolution: "hour",
-        window_start: windowStart.toISOString(),
-        window_end: windowEnd.toISOString(),
-      }, apiKey);
+      // Single consolidated API call via the unified metrics pricing endpoint
+      const response = await this._apiRequest(
+        UNIFIED_PRICING_ENDPOINT,
+        buildUnifiedPricingQuery(windowStart, windowEnd),
+        authToken,
+      );
 
-      // Filter out invalid frames
-      const validFrames = response.frames.filter((frame) => {
-        return frame.is_cheap !== null && frame.is_expensive !== null;
+      const validFrames = normalizeUnifiedPricingResponse(response);
+      const dailyAverage = calculateDailyAverage(validFrames, {
+        now,
+        timeZone: this.driver.homey.clock.getTimezone(),
       });
-
-      // Calculate daily average from hourly data if not provided
-      const dailyAverage = response.daily_average || this._calculateDailyAverage(validFrames);
 
       // Get configurable refresh hour from first device (default to 15)
       const devices = this.driver.getDevices();
@@ -161,21 +165,21 @@ class APIOrchestrator {
     this.manualRefreshRequested = false;
 
     try {
-      // Get API key from first device (all devices share same key)
+      // Get API token from first device (all devices share the same token)
       const devices = this.driver.getDevices();
       if (devices.length === 0) {
         this.driver.log("No devices available for cache refresh");
         return;
       }
 
-      const apiKey = devices[0].getSetting("apiKey");
-      if (!apiKey) {
-        this.driver.log("API key not available for cache refresh");
+      const authToken = devices[0].getSetting("apiKey");
+      if (!authToken) {
+        this.driver.log("API token not available for cache refresh");
         return;
       }
 
       // Fetch fresh data
-      const freshData = await this.fetchFreshData(apiKey);
+      const freshData = await this.fetchFreshData(authToken);
       
       // Update cache
       this.cache.updateCache(freshData);
@@ -238,29 +242,14 @@ class APIOrchestrator {
     await this.refreshAllDevices();
   }
 
-  _calculateDailyAverage(frames) {
-    if (!frames || frames.length === 0) return 0;
-
-    const today = new Date().toLocaleDateString("en-CA");
-    const todayFrames = frames.filter(frame => {
-      const frameDate = new Date(frame.start).toLocaleDateString("en-CA");
-      return frameDate === today;
-    });
-
-    if (todayFrames.length === 0) return 0;
-
-    const sum = todayFrames.reduce((total, frame) => total + (frame.price_gross || 0), 0);
-    return sum / todayFrames.length;
-  }
-
-  _apiRequest(endpoint, params, apiKey) {
+  _apiRequest(endpoint, params, authToken) {
     const url = new URL(`https://api.pstryk.pl${endpoint}`);
-    Object.keys(params).forEach((key) => url.searchParams.append(key, params[key]));
+    Object.entries(params).forEach(([key, value]) => url.searchParams.append(key, value));
 
     const options = {
       method: "GET",
       headers: {
-        Authorization: apiKey,
+        Authorization: authToken,
         "Content-Type": "application/json",
         "User-Agent": "Homey-PstrykPrice/1.0.0",
       },
@@ -275,12 +264,33 @@ class APIOrchestrator {
         });
 
         res.on("end", () => {
-          try {
-            const jsonData = JSON.parse(data);
-            resolve(jsonData);
-          } catch (error) {
-            reject(new Error("Failed to parse response data"));
+          const statusCode = res.statusCode || 500;
+          let jsonData = null;
+
+          if (data) {
+            try {
+              jsonData = JSON.parse(data);
+            } catch (error) {
+              reject(new Error(`Failed to parse Pstryk API response (status ${statusCode})`));
+              return;
+            }
           }
+
+          if (statusCode < 200 || statusCode >= 300) {
+            const message = jsonData?.detail
+              || jsonData?.error
+              || jsonData?.message
+              || `Pstryk API request failed with status ${statusCode}`;
+            reject(new Error(message));
+            return;
+          }
+
+          if (!jsonData) {
+            reject(new Error("Pstryk API returned an empty response"));
+            return;
+          }
+
+          resolve(jsonData);
         });
       });
 

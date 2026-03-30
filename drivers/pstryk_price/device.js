@@ -341,7 +341,7 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
     this.settings = newSettings;
 
     if (changedKeys.includes("apiKey")) {
-      this.log("API key changed, requesting cache refresh");
+      this.log("API token changed, requesting cache refresh");
       this.driver.apiOrchestrator.requestManualRefresh();
       this.requestCacheUpdate();
     }
@@ -987,26 +987,6 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
     return { position, totalHours };
   }
 
-  // async getHistoricalPrices(apiKey) {
-  //   const now = new Date();
-  //   const windowStart = new Date(now);
-  //   windowStart.setDate(now.getDate() - 7);
-
-  //   const response = await this.apiRequest(
-  //     "/integrations/pricing/",
-  //     {
-  //       resolution: "day",
-  //       window_start: windowStart.toISOString(),
-  //       window_end: now.toISOString(),
-  //     },
-  //     apiKey,
-  //   );
-
-  //   return response.frames.map((frame) => ({
-  //     timestamp: new Date(frame.start).getTime(),
-  //     price: frame.price_gross_avg,
-  //   }));
-  // }
 
   /**
    * Calculates price position using tiered ranking for fair tie handling
