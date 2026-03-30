@@ -126,25 +126,31 @@ isCacheValid() {
 
 ### Consolidated API Call Strategy
 
-**Current Pattern** (Multiple calls):
+**Legacy Shape** (separate hourly data and aggregate handling):
 ```javascript
-// Current implementation - multiple API calls
-const currentPrices = await this.apiRequest("/integrations/pricing/", { resolution: "hour", ... });
-const dailyAverage = await this.apiRequest("/integrations/pricing/", { resolution: "day", ... });
-```
+// Historical approach split hourly pricing retrieval from aggregate handling.
+// It is shown here only to explain why a unified request is simpler to maintain.
 
-**Optimized Pattern** (Single call):
-```javascript
-// Optimized implementation - single API call
-const response = await this.apiRequest("/integrations/pricing/", {
+const response = await this.apiRequest("/integrations/meter-data/unified-metrics/", {
+  metrics: "pricing",
   resolution: "hour",
   window_start: windowStart.toISOString(),
   window_end: windowEnd.toISOString(),
-  include_daily_average: true  // Request daily average in same call
+});
+```
+
+**Current Pattern** (single non-deprecated request):
+```javascript
+const response = await this.apiRequest("/integrations/meter-data/unified-metrics/", {
+  metrics: "pricing",
+  resolution: "hour",
+  window_start: windowStart.toISOString(),
+  window_end: windowEnd.toISOString(),
 });
 
-// Extract both current prices and daily average from single response
-const currentPrices = response.frames;
+const currentPrices = response.frames.map((frame) => frame.metrics.pricing);
+const dailyAverage = response.summary.pricing.price_gross_avg;
+```
 const dailyAverage = response.daily_average || this.calculateDailyAverage(response.frames);
 ```
 

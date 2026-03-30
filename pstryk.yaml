@@ -3,1355 +3,325 @@ info:
   title: Pstryk Backend API
   version: 1.0.0
   description: |-
-    Welcome to the Pstryk Backend API documentation. Please review the following migration schedule and key changes.
+    Repository-local contract for the active Pstryk integrations API.
 
-    ## Deprecation Policy & Timeline
+    This project uses only the non-deprecated unified metrics endpoint:
+    `/integrations/meter-data/unified-metrics/`.
 
-    * **Until March 31, 2026:** Transition period (Dual Run). Both the legacy and the new unified metrics endpoints will operate in parallel.
-    * **April 1, 2026:** **Full decommissioning** of legacy endpoints. Please ensure your migration is completed by this date to avoid service interruptions.
-
-    ## Key Changes
-
-    * **Endpoint Consolidation:** The following legacy endpoints have been merged into a single unified metrics endpoint (`/unified-metrics/`):
-      * `/energy-usage/` → `?metrics=meter_values`
-      * `/energy-cost/` → `?metrics=cost`
-      * `/carbon-footprint/` → `?metrics=carbon`
-    * **Core Rewrite:** The business logic has been entirely rewritten, providing significantly higher performance and system stability.
-    * **New Data Schemas:** Please review the Models section. Input and output structures have been updated to reflect the new architecture.
-
-    ## Migration Guide
-
-    Most changes involve switching from the individual legacy endpoints to the unified metrics endpoint and mapping your data structures to the new response schema. Multiple legacy calls can now be replaced by a single, more efficient request using comma-separated `metrics` parameter (e.g. `?metrics=meter_values,cost,carbon`).
+    Canonical metric selectors are:
+    - `meter_values`
+    - `cost`
+    - `carbon`
+    - `pricing`
 paths:
-  /integrations/meter-data/{id}/power-cost/:
-    get:
-      operationId: meter_data_power_cost_retrieve
-      description: |
-        ### Retrieve Aggregated Meter Power Cost
-
-        **NOTE:** To return sample data, use `meter_pk` = `0x0`
-
-        This endpoint returns power cost and energy sold information for a given time window and resolution. The total cost for each hour is calculated as the sum of:
-
-        1. Energy costs:
-           - TGE (spot) price × power usage
-           - Distribution price × power usage
-
-        2. Fixed fees (prorated per hour):
-           - Power fee (based on annual usage brackets: 0-500, 500-1200, 1200-2800, 2800+)
-           - Transition fee (based on annual usage brackets: 0-500, 500-1200, 1200+)
-           - Network fee (3-phase connection)
-
-        3. Additional fees:
-           - Excise tax (configurable in Django admin)
-           - Profit margin (configurable in Django admin)
-
-        On the other hand, the total energy sold value denotes the product of the total energy sold and the price of energy sold.
-
-        All time values are in UTC.
-
-        - By providing `for_tz` parameter, you can instruct the endpoint to return the time window in the timezone of choice. All times will be returned in UTC regardless of the `for_tz` value.
-        - If `window_end` is not provided, the current time is used.
-        - Depending on the `resolution`, the `window_start` and/or `window_end` **will** be automatically rounded down/up to the start/end **by** the resolution unit.
-        - It is not allowed to provide `for_tz` parameter in combination with `resolution` set to `hour`.
-        - Frame `is_live` flag is true for the frame that is currently "live".
-
-        Response includes:
-        - Individual cost frames for the requested resolution (hour/day/month)
-        - Total cost for the entire time window
-      parameters:
-      - in: query
-        name: for_tz
-        schema:
-          type: string
-        description: Timezone for which the data should be aggregated. If not provided,
-          the data will be aggregated in UTC. E.g. Europe/Warsaw
-        examples:
-          Europe/Warsaw:
-            value: Europe/Warsaw
-          UTC:
-            value: UTC
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      - in: query
-        name: resolution
-        schema:
-          type: string
-          enum:
-          - day
-          - hour
-          - month
-          - week
-        description: Time resolution
-        required: true
-      - in: query
-        name: window_end
-        schema:
-          type: string
-          format: date-time
-        description: End of the time window. Accepts time value with timezone information.
-          The only timezone accepted is UTC.
-        examples:
-          InAnHour:
-            value: '2026-03-25T16:14:44Z'
-            summary: In an hour
-          Tomorrow:
-            value: '2026-03-26T15:14:44Z'
-          NextWeek:
-            value: '2026-04-01T15:14:44Z'
-            summary: Next week
-          NextMonth:
-            value: '2026-04-24T15:14:44Z'
-            summary: Next month
-      - in: query
-        name: window_start
-        schema:
-          type: string
-          format: date-time
-        description: Start of the time window. Accepts time value with timezone information.
-          The only timezone accepted is UTC.
-        required: true
-        examples:
-          AnHourAgo:
-            value: '2026-03-25T14:14:44Z'
-            summary: An hour ago
-          Yesterday:
-            value: '2026-03-24T15:14:44Z'
-          AWeekAgo:
-            value: '2026-03-18T15:14:44Z'
-            summary: A week ago
-          AMonthAgo:
-            value: '2026-02-22T15:14:44Z'
-            summary: A month ago
-      tags:
-      - meter-data
-      security:
-      - TokenAuthentication: []
-      deprecated: true
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MeterPowerCostResponse'
-          description: ''
-        '404':
-          description: Not found. Either the user is not authorized to access the
-            requested meter, or the meter does not exist.
-  /integrations/meter-data/carbon-footprint/:
-    get:
-      operationId: meter_data_carbon_footprint_retrieve
-      description: |
-        ### Retrieve Aggregated Carbon Footprint
-
-        This endpoint returns carbon footprint for a given time window and resolution. Carbon footprint is calculated by multiplying the hourly power usage by the CO2 emission factor for the region.
-        Other than returning the carbon footprint for each time frame, this endpoint also returns the total carbon footprint for the entire time window.
-
-        All time values are in UTC.
-
-        Carbon footprint values are expressed in gCO2eq.
-
-        - By providing `for_tz` parameter, you can instruct the endpoint to return the time window in the timezone of choice. All times will be returned in UTC regardless of the `for_tz` value.
-        - If `window_end` is not provided, the current time is used.
-        - Depending on the `resolution`, the `window_start` and/or `window_end` **will** be automatically rounded down/up to the start/end **by** the resolution unit.
-        - It is not allowed to provide `for_tz` parameter in combination with `resolution` set to `hour`.
-        - Frame `is_live` flag is true for the frame that is currently "live".
-      parameters:
-      - in: query
-        name: for_tz
-        schema:
-          type: string
-        description: Timezone for which the data should be aggregated. If not provided,
-          the data will be aggregated in UTC. E.g. Europe/Warsaw
-        examples:
-          Europe/Warsaw:
-            value: Europe/Warsaw
-          UTC:
-            value: UTC
-      - in: query
-        name: resolution
-        schema:
-          type: string
-          enum:
-          - day
-          - hour
-          - month
-          - week
-        description: Time resolution
-        required: true
-      - in: query
-        name: window_end
-        schema:
-          type: string
-          format: date-time
-        description: End of the time window. Accepts time value with timezone information.
-          The only timezone accepted is UTC.
-        examples:
-          InAnHour:
-            value: '2026-03-25T16:14:44Z'
-            summary: In an hour
-          Tomorrow:
-            value: '2026-03-26T15:14:44Z'
-          NextWeek:
-            value: '2026-04-01T15:14:44Z'
-            summary: Next week
-          NextMonth:
-            value: '2026-04-24T15:14:44Z'
-            summary: Next month
-      - in: query
-        name: window_start
-        schema:
-          type: string
-          format: date-time
-        description: Start of the time window. Accepts time value with timezone information.
-          The only timezone accepted is UTC.
-        required: true
-        examples:
-          AnHourAgo:
-            value: '2026-03-25T14:14:44Z'
-            summary: An hour ago
-          Yesterday:
-            value: '2026-03-24T15:14:44Z'
-          AWeekAgo:
-            value: '2026-03-18T15:14:44Z'
-            summary: A week ago
-          AMonthAgo:
-            value: '2026-02-22T15:14:44Z'
-            summary: A month ago
-      tags:
-      - meter-data
-      security:
-      - TokenAuthentication: []
-      deprecated: true
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MeterCarbonFootprintResponse'
-          description: ''
-        '404':
-          description: Not found. Either the user is not authorized to access the
-            requested meter, or the meter does not exist.
-  /integrations/meter-data/energy-cost/:
-    get:
-      operationId: meter_data_energy_cost_retrieve
-      description: |
-        ### Retrieve Aggregated Meter Power Cost
-
-        This endpoint returns power cost for a given time window and resolution. The total cost for each hour is calculated as the sum of:
-
-        1. Energy costs:
-           - TGE (spot) price × power usage
-           - Distribution price × power usage
-
-        2. Fixed fees (prorated per hour):
-           - Power fee (based on annual usage brackets: 0-500, 500-1200, 1200-2800, 2800+)
-           - Transition fee (based on annual usage brackets: 0-500, 500-1200, 1200+)
-           - Network fee (3-phase connection)
-
-        3. Additional fees:
-           - Excise tax (configurable in Django admin)
-           - Profit margin (configurable in Django admin)
-
-        All time values are in UTC.
-
-        - By providing `for_tz` parameter, you can instruct the endpoint to return the time window in the timezone of choice. All times will be returned in UTC regardless of the `for_tz` value.
-        - If `window_end` is not provided, the current time is used.
-        - Depending on the `resolution`, the `window_start` and/or `window_end` **will** be automatically rounded down/up to the start/end **by** the resolution unit.
-        - It is not allowed to provide `for_tz` parameter in combination with `resolution` set to `hour`.
-        - Frame `is_live` flag is true for the frame that is currently "live".
-
-        Response includes:
-        - Individual cost frames for the requested resolution (hour/day/month)
-        - Total cost for the entire time window
-      parameters:
-      - in: query
-        name: for_tz
-        schema:
-          type: string
-        description: Timezone for which the data should be aggregated. If not provided,
-          the data will be aggregated in UTC. E.g. Europe/Warsaw
-        examples:
-          Europe/Warsaw:
-            value: Europe/Warsaw
-          UTC:
-            value: UTC
-      - in: query
-        name: resolution
-        schema:
-          type: string
-          enum:
-          - day
-          - hour
-          - month
-          - week
-        description: Time resolution
-        required: true
-      - in: query
-        name: window_end
-        schema:
-          type: string
-          format: date-time
-        description: End of the time window. Accepts time value with timezone information.
-          The only timezone accepted is UTC.
-        examples:
-          InAnHour:
-            value: '2026-03-25T16:14:44Z'
-            summary: In an hour
-          Tomorrow:
-            value: '2026-03-26T15:14:44Z'
-          NextWeek:
-            value: '2026-04-01T15:14:44Z'
-            summary: Next week
-          NextMonth:
-            value: '2026-04-24T15:14:44Z'
-            summary: Next month
-      - in: query
-        name: window_start
-        schema:
-          type: string
-          format: date-time
-        description: Start of the time window. Accepts time value with timezone information.
-          The only timezone accepted is UTC.
-        required: true
-        examples:
-          AnHourAgo:
-            value: '2026-03-25T14:14:44Z'
-            summary: An hour ago
-          Yesterday:
-            value: '2026-03-24T15:14:44Z'
-          AWeekAgo:
-            value: '2026-03-18T15:14:44Z'
-            summary: A week ago
-          AMonthAgo:
-            value: '2026-02-22T15:14:44Z'
-            summary: A month ago
-      tags:
-      - meter-data
-      security:
-      - TokenAuthentication: []
-      deprecated: true
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MeterPowerCostResponse'
-          description: ''
-        '404':
-          description: Not found. Either the user is not authorized to access the
-            requested meter, or the meter does not exist.
-  /integrations/meter-data/energy-usage/:
-    get:
-      operationId: meter_data_energy_usage_retrieve
-      description: "### Retrieve Aggregated Meter Power Usage\n\n\nThis endpoint returns
-        the aggregated power usage for a given time window and resolution. It will
-        return the information on the power usage for each frame in the requested
-        time window, as well as the total power usage in it.\n\nAll time values are
-        in UTC.\n\n- By providing `for_tz` parameter, you can instruct the endpoint
-        to return the time window in the timezone of choice. All times will be returned
-        in UTC regardless of the `for_tz` value.\n- If `window_end` is not provided,
-        the current time is used.\n- Depending on the `resolution`, the `window_start`
-        and/or `window_end` **will** be automatically snapped down/up to the start/end
-        of the resolution unit.\n- It is not allowed to provide `for_tz` parameter
-        in combination with `resolution` set to `hour`.\n- Frame `is_live` flag is
-        true for the frame that is currently \"live\".\n\n**🌟 Note**\n\nBoth
-        `window_start` and `window_end` are not snapshot timestamps - rather, they
-        represent the culmination of each hourly aggregation period, marking the precise
-        moments when data collection wraps up.\n\nThus, `window_start`=`2024-01-01T11:00:00Z`
-        will be interpreted as \"give me the aggregated power usage for the period
-        between 11:00 to 12:00 on January 1st, 2024\".\n\nOn the other hand, `window_end`=`2024-01-01T11:00:00Z`
-        will be interpreted as \"give me the aggregated power usage for the period
-        from 10:00 to 11:00 on January 1st, 2024\".\n"
-      parameters:
-      - in: query
-        name: for_tz
-        schema:
-          type: string
-        description: Timezone for which the data should be aggregated. If not provided,
-          the data will be aggregated in UTC. E.g. Europe/Warsaw
-        examples:
-          Europe/Warsaw:
-            value: Europe/Warsaw
-          UTC:
-            value: UTC
-      - in: query
-        name: resolution
-        schema:
-          type: string
-          enum:
-          - day
-          - hour
-          - month
-          - week
-          - year
-        description: Time resolution
-        required: true
-      - in: query
-        name: window_end
-        schema:
-          type: string
-          format: date-time
-        description: End of the time window. Accepts time value with timezone information.
-          The only timezone accepted is UTC.
-        examples:
-          InAnHour:
-            value: '2026-03-25T16:14:44Z'
-            summary: In an hour
-          Tomorrow:
-            value: '2026-03-26T15:14:44Z'
-          NextWeek:
-            value: '2026-04-01T15:14:44Z'
-            summary: Next week
-          NextMonth:
-            value: '2026-04-24T15:14:44Z'
-            summary: Next month
-          NextYear:
-            value: '2027-03-25T15:14:44Z'
-            summary: Next year
-      - in: query
-        name: window_start
-        schema:
-          type: string
-          format: date-time
-        description: Start of the time window. Accepts time value with timezone information.
-          The only timezone accepted is UTC.
-        required: true
-        examples:
-          AnHourAgo:
-            value: '2026-03-25T14:14:44Z'
-            summary: An hour ago
-          Yesterday:
-            value: '2026-03-24T15:14:44Z'
-          AWeekAgo:
-            value: '2026-03-18T15:14:44Z'
-            summary: A week ago
-          AMonthAgo:
-            value: '2026-02-22T15:14:44Z'
-            summary: A month ago
-          AYearAgo:
-            value: '2025-03-25T15:14:44Z'
-            summary: A year ago
-      tags:
-      - meter-data
-      security:
-      - TokenAuthentication: []
-      deprecated: true
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MeterPowerAggregatorResponse'
-          description: ''
-        '404':
-          description: Not found. Either the user is not authorized to access the
-            requested meter, or the meter does not exist.
   /integrations/meter-data/unified-metrics/:
     get:
       operationId: meter_data_unified_metrics_retrieve
-      description: "### Unified Metrics Endpoint (Integration API)\n\nThis endpoint
-        provides a unified interface for retrieving multiple energy metrics in a single
-        request. It combines the functionality of the deprecated individual endpoints
-        into one flexible, efficient API.\n\n**✨ Replaces Deprecated Endpoints**\n\nThis
-        endpoint replaces the following deprecated endpoints:\n- `/integrations/meter-data/energy-usage/`
-        - use `?metrics=meterValues`\n- `/integrations/meter-data/energy-cost/` -
-        use `?metrics=cost`\n- `/integrations/meter-data/carbon-footprint/` - use
-        `?metrics=carbon`\n\nYou can also request multiple metrics in a single call:
-        `?metrics=meterValues,cost,carbon`\n\n**⚠️ Important: Transition Period Notice**\n\nDuring
-        the initial 2-week transition period, this endpoint may produce results that
-        differ from the deprecated endpoints due to:\n- **Mock data usage** - Some
-        meters may temporarily use simulated data during the transition\n- **Improved
-        precision** - Enhanced calculation methods provide more accurate results but
-        may differ slightly from legacy calculations\n\nThese differences are expected
-        and reflect improvements in data accuracy and system performance.\n\n**📊
-        Available Metrics**\n\n- `meterValues` - Energy consumption and production
-        data (replaces energy-usage)\n- `cost` - Energy cost breakdown with tariff
-        information (replaces energy-cost)\n- `carbon` - Carbon footprint (CO2 equivalent
-        emissions) (replaces carbon-footprint)\n- `pricing` - TGE pricing data (also
-        available via separate pricing endpoints)\n\n**⏰ Time Windows and Resolution**\n\nAll
-        time values are in UTC.\n\n- By providing `for_tz` parameter, you can instruct
-        the endpoint to return the time window in the timezone of choice. All times
-        will be returned in UTC regardless of the `for_tz` value.\n- If `window_end`
-        is not provided, the current time is used.\n- Depending on the `resolution`,
-        the `window_start` and/or `window_end` **will** be automatically snapped down/up
-        to the start/end of the resolution unit.\n- It is not allowed to provide `for_tz`
-        parameter in combination with `resolution` set to `hour`.\n\n**🌟
-        Note on Time Interpretation**\n\nBoth `window_start` and `window_end` are
-        not snapshot timestamps - rather, they represent the culmination of each aggregation
-        period, marking the precise moments when data collection wraps up.\n\nThus,
-        `window_start`=`2024-01-01T11:00:00Z` will be interpreted as \"give me data
-        for the period between 11:00 to 12:00 on January 1st, 2024\".\n\nOn the other
-        hand, `window_end`=`2024-01-01T11:00:00Z` will be interpreted as \"give me
-        data for the period from 10:00 to 11:00 on January 1st, 2024\".\n\n**📋
-        Response Structure**\n\nThe response contains two main sections:\n\n1. **frames**:
-        Array of time-windowed data points, each containing:\n   - `start`: Start
-        time of the frame (ISO 8601 format)\n   - `end`: End time of the frame (ISO
-        8601 format)\n   - `is_live` (optional): Boolean flag, present and `true`
-        only for the frame that contains the current moment (\"now\"). This applies
-        to hourly, daily, and monthly frames alike. Omitted for historical frames
-        and for queries that don't extend to the present.\n   - `metrics`: Object
-        containing requested metrics data for this frame\n\n2. **summary**: Aggregated
-        totals across all frames for each requested metric\n\n**💡 Example
-        Request**\n\n```\nGET /integrations/meter-data/unified-metrics/?metrics=meterValues,cost&window_start=2024-01-01T00:00:00Z&window_end=2024-01-01T23:59:59Z&resolution=hour\nAuthorization:
-        sk-your-token-here\n```\n\n**📦 Example Response**\n\n```json\n{\n
-        \  \"frames\": [\n    {\n      \"start\": \"2024-01-01T00:00:00Z\",\n      \"end\":
-        \"2024-01-01T01:00:00Z\",\n      \"metrics\": {\n        \"meterValues\":
-        {\n          \"energy_active_import_register\": 1.5,\n          \"energy_active_export_register\":
-        0.2,\n          \"energy_balance\": 1.3\n        },\n        \"cost\": {
-        \n          \"energy_active_import_register_cost\": 0.45,\n          \"distribution_cost\":
-        0.15,\n          \"vat\": 0.12,\n          \"total_cost\": 0.72\n        }
-        \n      }\n    }\n  ],\n  \"summary\": {\n    \"meterValues\":
-        {\n      \"energy_active_import_register_total\": 36.5,\n      \"energy_active_export_register_total\":
-        4.8,\n      \"energy_balance_total\": 31.7\n    },\n    \"cost\":
-        {\n      \"energy_active_import_register_cost_total\": 10.95,\n      \"distribution_cost_total\": 3.60,\n      \"vat_total\": 2.88,\n
-        \      \"total_cost_total\": 17.43\n    }\n  }\n}\n```\n"
-      parameters:
-      - in: query
-        name: for_tz
-        schema:
-          type: string
-        description: Timezone for which the data should be aggregated. If not provided,
-          the data will be aggregated in UTC. E.g. Europe/Warsaw
-        examples:
-          Europe/Warsaw:
-            value: Europe/Warsaw
-          UTC:
-            value: UTC
-      - in: query
-        name: metrics
-        schema:
-          type: string
-        description: 'Comma-separated list of metrics to retrieve. Available: meter_values,
-          cost, carbon, pricing'
-        required: true
-        examples:
-          SingleMetric:
-            value: meter_values
-            summary: Single metric
-          MultipleMetrics:
-            value: meter_values,cost
-            summary: Multiple metrics
-          AllMetrics:
-            value: meter_values,cost,carbon,pricing
-            summary: All metrics
-      - in: query
-        name: resolution
-        schema:
-          type: string
-          enum:
-          - day
-          - hour
-          - month
-        description: Time resolution
-        required: true
-      - in: query
-        name: window_end
-        schema:
-          type: string
-          format: date-time
-        description: End of the time window. Accepts time value with timezone information.
-          The only timezone accepted is UTC.
-        examples:
-          InAnHour:
-            value: '2026-03-25T16:14:44Z'
-            summary: In an hour
-          Tomorrow:
-            value: '2026-03-26T15:14:44Z'
-          NextMonth:
-            value: '2026-04-24T15:14:44Z'
-            summary: Next month
-      - in: query
-        name: window_start
-        schema:
-          type: string
-          format: date-time
-        description: Start of the time window. Accepts time value with timezone information.
-          The only timezone accepted is UTC.
-        required: true
-        examples:
-          AnHourAgo:
-            value: '2026-03-25T14:14:44Z'
-            summary: An hour ago
-          Yesterday:
-            value: '2026-03-24T15:14:44Z'
-          AMonthAgo:
-            value: '2026-02-22T15:14:44Z'
-            summary: A month ago
+      description: |-
+        Retrieve one or more energy metrics from the unified integrations endpoint.
+
+        Available metrics:
+        - `meter_values` — energy import/export and balance
+        - `cost` — energy cost aggregates
+        - `carbon` — carbon footprint
+        - `pricing` — Pstryk pricing data
+
+        All time values are UTC. If `for_tz` is provided, aggregation follows that
+        timezone while timestamps are still returned in UTC. The `for_tz` parameter
+        must not be combined with `resolution=hour`.
       tags:
-      - meter-data
+        - meter-data
       security:
-      - TokenAuthentication: []
+        - TokenAuthentication: []
+      parameters:
+        - in: query
+          name: metrics
+          required: true
+          schema:
+            type: string
+          description: Comma-separated list of metric selectors.
+          examples:
+            pricing:
+              summary: Pricing only
+              value: pricing
+            pricing_and_cost:
+              summary: Pricing and cost
+              value: pricing,cost
+            all_metrics:
+              summary: All supported metrics
+              value: meter_values,cost,carbon,pricing
+        - in: query
+          name: resolution
+          required: true
+          schema:
+            type: string
+            enum:
+              - day
+              - hour
+              - month
+          description: Aggregation resolution.
+        - in: query
+          name: window_start
+          required: true
+          schema:
+            type: string
+            format: date-time
+          description: Inclusive start of the requested time window in UTC.
+        - in: query
+          name: window_end
+          schema:
+            type: string
+            format: date-time
+          description: Exclusive end of the requested time window in UTC.
+        - in: query
+          name: for_tz
+          schema:
+            type: string
+          description: Timezone used for aggregation, for example `Europe/Warsaw`.
       responses:
         '200':
+          description: Successful unified metrics response.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/UnifiedMetricsResponse'
-          description: ''
+              examples:
+                pricing:
+                  summary: Hourly pricing response
+                  value:
+                    frames:
+                      - start: '2026-03-30T00:00:00Z'
+                        end: '2026-03-30T01:00:00Z'
+                        metrics:
+                          pricing:
+                            tge_price: 0.509
+                            dist_price: 0.0947
+                            service_price: 0.08
+                            base_price: 0.6837
+                            vat_component: 0.157251
+                            excise_component: 0.005
+                            full_price: 0.845951
+                            price_net: 0.509
+                            price_gross: 0.845951
+                            price_prosumer_net: 0.509
+                            price_prosumer_gross: 0.62607
+                            is_cheap: false
+                            is_expensive: false
+                    summary:
+                      pricing:
+                        tge_price_avg: 0.39
+                        dist_price_avg: 0.27
+                        service_price_avg: 0.08
+                        base_price_avg: 0.74
+                        vat_component_avg: 0.17
+                        excise_component_avg: 0.005
+                        full_price_avg: 0.91
+                        price_net_avg: 0.39
+                        price_gross_avg: 0.91
+                        price_prosumer_net_avg: 0.39
+                        price_prosumer_gross_avg: 0.48
         '400':
-          description: Bad request. Check your parameters.
+          description: Bad request. Check query parameters.
         '404':
-          description: Not found. Either the user is not authorized to access the
-            requested meter, or the meter does not exist.
-  /integrations/pricing/:
-    get:
-      operationId: pricing_retrieve
-      description: |
-        ### List Pricing
-
-        Returns the pricing for meter related authentication token, for each hour in the given time window and an average price for that time window.
-
-        Returned prices are in PLN/kWh.
-
-        The resolution can be selected from 'hour', 'day', 'month', or 'year'.
-
-        All time values are in UTC.
-
-        - By providing `for_tz` parameter, you can instruct the endpoint to return the time window in the timezone of choice. All times will be returned in UTC regardless of the `for_tz` value.
-        - It is not allowed to provide `for_tz` parameter in combination with `resolution` set to `hour`.
-        - If `window_end` is not provided, it will default to the end of "tomorrow", that is today + 1 day @ 23:59:59.
-        - If `window_end` is before `window_start`, an error will be returned.
-        - If `window_end` is more than 31 days after `window_start` for hourly resolution, an error will be returned.
-        - Depending on the `resolution`, the `window_start` and/or `window_end` **will** be automatically rounded down/up to the start/end **by** the resolution unit.
-
-        Response format varies based on resolution:
-
-        For hourly resolution:
-        ```json
-        {
-            "price_net_avg": number,
-            "price_gross_avg": number,
-            "frames": [{
-                "start": string,            // UTC timestamp
-                "end": string,              // UTC timestamp
-                "price_net": number,        // Net price for the hour
-                "price_gross": number,      // Gross price for the hour
-                "is_cheap": boolean,
-                "is_expensive": boolean
-            }]
-        }
-        ```
-
-        For daily/monthly/yearly resolution:
-        ```json
-        {
-            "price_net_avg": number,
-            "price_gross_avg": number,
-            "frames": [{
-                "start": string,            // UTC timestamp
-                "end": string,              // UTC timestamp
-                "price_net_avg": number,    // Average net price for the period
-                "price_gross_avg": number,  // Average gross price for the period
-                "is_cheap": boolean,
-                "is_expensive": boolean
-            }]
-        }
-        ```
-
-        The "gross" price includes:
-        - Net price from TGE
-        - Profit margin
-        - Excise tax
-        - Distribution costs
-
-        The `is_live` flag is true for the frame that is currently live.
-      parameters:
-      - in: query
-        name: for_tz
-        schema:
-          type: string
-        description: Timezone for which the data should be aggregated. If not provided,
-          the data will be aggregated in UTC. E.g. Europe/Warsaw
-        examples:
-          Europe/Warsaw:
-            value: Europe/Warsaw
-          UTC:
-            value: UTC
-      - in: query
-        name: resolution
-        schema:
-          type: string
-          enum:
-          - day
-          - hour
-          - month
-          - year
-        description: Time resolution
-        required: true
-      - in: query
-        name: window_end
-        schema:
-          type: string
-          format: date-time
-        description: End of the time window. Accepts time value with timezone information.
-          The only timezone accepted is UTC.
-        examples:
-          InAnHour:
-            value: '2026-03-25T16:14:44Z'
-            summary: In an hour
-          Tomorrow:
-            value: '2026-03-26T15:14:44Z'
-          NextMonth:
-            value: '2026-04-24T15:14:44Z'
-            summary: Next month
-          NextYear:
-            value: '2027-03-25T15:14:44Z'
-            summary: Next year
-      - in: query
-        name: window_start
-        schema:
-          type: string
-          format: date-time
-        description: Start of the time window. Accepts time value with timezone information.
-          The only timezone accepted is UTC.
-        required: true
-        examples:
-          AnHourAgo:
-            value: '2026-03-25T14:14:44Z'
-            summary: An hour ago
-          Yesterday:
-            value: '2026-03-24T15:14:44Z'
-          AMonthAgo:
-            value: '2026-02-22T15:14:44Z'
-            summary: A month ago
-          AYearAgo:
-            value: '2025-03-25T15:14:44Z'
-            summary: A year ago
-      tags:
-      - pricing
-      security:
-      - TokenAuthentication: []
-      deprecated: true
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TgePricingResponse'
-          description: ''
-        '400':
-          description: Bad request.
-  /integrations/prosumer-pricing/:
-    get:
-      operationId: prosumer_pricing_retrieve
-      description: |
-        ### List Prosumer Pricing
-
-        Returns the pricing for prosumer-related authentication token, for each hour in the given time window and an average price for that time window.
-
-        Returned prices are in PLN/kWh.
-
-        The resolution can be selected from 'hour', 'day', 'month', or 'year'.
-
-        All time values are in UTC.
-
-        - By providing `for_tz` parameter, you can instruct the endpoint to return the time window in the timezone of choice. All times will be returned in UTC regardless of the `for_tz` value.
-        - It is not allowed to provide `for_tz` parameter in combination with `resolution` set to `hour`.
-        - If `window_end` is not provided, it will default to the end of "tomorrow", that is today + 1 day @ 23:59:59.
-        - If `window_end` is before `window_start`, an error will be returned.
-        - If `window_end` is more than 31 days after `window_start` for hourly resolution, an error will be returned.
-        - Depending on the `resolution`, the `window_start` and/or `window_end` **will** be automatically rounded down/up to the start/end **by** the resolution unit.
-
-        Response format varies based on resolution:
-
-        For hourly resolution:
-        ```json
-        {
-            "price_net_avg": number,
-            "price_gross_avg": number,
-            "frames": [{
-                "start": string,            // UTC timestamp
-                "end": string,              // UTC timestamp
-                "price_net": number,        // Net price for the hour (negative prices are set to 0)
-                "price_gross": number,      // Gross price for the hour (net + VAT)
-                "is_cheap": boolean,
-                "is_expensive": boolean,
-                "is_live": boolean
-            }]
-        }
-        ```
-
-        For daily/monthly/yearly resolution:
-        ```json
-        {
-            "price_net_avg": number,
-            "price_gross_avg": number,
-            "frames": [{
-                "start": string,            // UTC timestamp
-                "end": string,              // UTC timestamp
-                "price_net_avg": number,    // Average net price for the period (negative prices are set to 0)
-                "price_gross_avg": number,  // Average gross price for the period (net + VAT)
-                "is_cheap": boolean,
-                "is_expensive": boolean,
-                "is_live": boolean
-            }]
-        }
-        ```
-
-        Price calculation details:
-        - Negative TGE prices are automatically set to 0
-        - Gross price is calculated as net price multiplied by VAT rate
-        - The `is_live` flag is true for the frame that is currently live
-      parameters:
-      - in: query
-        name: for_tz
-        schema:
-          type: string
-        description: Timezone for which the data should be aggregated. If not provided,
-          the data will be aggregated in UTC. E.g. Europe/Warsaw
-        examples:
-          Europe/Warsaw:
-            value: Europe/Warsaw
-          UTC:
-            value: UTC
-      - in: query
-        name: resolution
-        schema:
-          type: string
-          enum:
-          - day
-          - hour
-          - month
-          - year
-        description: Time resolution
-        required: true
-      - in: query
-        name: window_end
-        schema:
-          type: string
-          format: date-time
-        description: End of the time window. Accepts time value with timezone information.
-          The only timezone accepted is UTC.
-        examples:
-          InAnHour:
-            value: '2026-03-25T16:14:44Z'
-            summary: In an hour
-          Tomorrow:
-            value: '2026-03-26T15:14:44Z'
-          NextMonth:
-            value: '2026-04-24T15:14:44Z'
-            summary: Next month
-          NextYear:
-            value: '2027-03-25T15:14:44Z'
-            summary: Next year
-      - in: query
-        name: window_start
-        schema:
-          type: string
-          format: date-time
-        description: Start of the time window. Accepts time value with timezone information.
-          The only timezone accepted is UTC.
-        required: true
-        examples:
-          AnHourAgo:
-            value: '2026-03-25T14:14:44Z'
-            summary: An hour ago
-          Yesterday:
-            value: '2026-03-24T15:14:44Z'
-          AMonthAgo:
-            value: '2026-02-22T15:14:44Z'
-            summary: A month ago
-          AYearAgo:
-            value: '2025-03-25T15:14:44Z'
-            summary: A year ago
-      tags:
-      - prosumer-pricing
-      security:
-      - TokenAuthentication: []
-      deprecated: true
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TgePricingResponse'
-          description: ''
-        '400':
-          description: Bad request.
+          description: Not found or unauthorized for the authenticated token.
 components:
   schemas:
-    MeterCarbonFootprintFrame:
+    UnifiedMetricsResponse:
       type: object
+      required:
+        - frames
+        - summary
+      properties:
+        frames:
+          type: array
+          items:
+            $ref: '#/components/schemas/UnifiedMetricsFrame'
+        summary:
+          $ref: '#/components/schemas/UnifiedMetricsSummary'
+    UnifiedMetricsFrame:
+      type: object
+      required:
+        - start
+        - end
+        - metrics
       properties:
         start:
           type: string
           format: date-time
-          description: Start time of the aggregation period. Inclusive.
+          description: Inclusive frame start in UTC.
         end:
           type: string
           format: date-time
-          description: End time of the aggregation period. Exclusive.
+          description: Exclusive frame end in UTC.
         is_live:
           type: boolean
-          description: Whether the aggregation frame overlaps with the current time.
-        carbon_footprint:
-          type: number
-          format: double
-          maximum: 10000000
-          minimum: -10000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          description: Carbon footprint for the aggregation frame expressed in gCO2eq.
-            Will amount to `null` if no region-wide CO2 emission for the given timeframe
-            was recorded.
-      required:
-      - carbon_footprint
-      - end
-      - start
-    MeterCarbonFootprintResponse:
+          description: Present and true only for the frame that overlaps the current moment.
+        metrics:
+          $ref: '#/components/schemas/UnifiedMetricsFrameMetrics'
+    UnifiedMetricsFrameMetrics:
       type: object
       properties:
-        resolution:
-          type: string
-        frames:
-          type: array
-          items:
-            $ref: '#/components/schemas/MeterCarbonFootprintFrame'
-        carbon_footprint_total:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          readOnly: true
-      required:
-      - carbon_footprint_total
-      - frames
-      - resolution
-    MeterPowerAggregatorResponse:
+        meter_values:
+          $ref: '#/components/schemas/MeterValuesMetric'
+        cost:
+          $ref: '#/components/schemas/CostMetric'
+        carbon:
+          $ref: '#/components/schemas/CarbonMetric'
+        pricing:
+          $ref: '#/components/schemas/PricingMetric'
+    UnifiedMetricsSummary:
       type: object
       properties:
-        resolution:
-          type: string
-        frames:
-          type: array
-          items:
-            $ref: '#/components/schemas/MeterPowerUsageFrame'
-        fae_total_usage:
+        meter_values:
+          $ref: '#/components/schemas/MeterValuesSummary'
+        cost:
+          $ref: '#/components/schemas/CostSummary'
+        carbon:
+          $ref: '#/components/schemas/CarbonSummary'
+        pricing:
+          $ref: '#/components/schemas/PricingSummary'
+    MeterValuesMetric:
+      type: object
+      properties:
+        energy_active_import_register:
           type: number
           format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          description: Sum of forward active energy measured in kWh for all frames.
-        rae_total:
+        energy_active_export_register:
           type: number
           format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          description: Sum of reverse active energy measured in kWh for all frames.
         energy_balance:
           type: number
           format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          description: Energy balance for all frames.
-      required:
-      - energy_balance
-      - fae_total_usage
-      - frames
-      - rae_total
-      - resolution
-    MeterPowerCostFrame:
+    MeterValuesSummary:
       type: object
       properties:
-        start:
-          type: string
-          description: Start time of the aggregation period. Inclusive.
-        end:
-          type: string
-          description: End time of the aggregation period. Exclusive.
-        fae_cost:
+        energy_active_import_register_total:
           type: number
           format: double
-          maximum: 10000000
-          minimum: -10000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          description: Cost of forward active energy for the aggregation frame in
-            PLN.
-        var_dist_cost_net:
+        energy_active_export_register_total:
           type: number
           format: double
-          maximum: 10000000
-          minimum: -10000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          description: Variable distribution cost component in PLN.
-        fix_dist_cost_net:
+        energy_balance_total:
           type: number
           format: double
-          maximum: 10000000
-          minimum: -10000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          description: Fixed distribution cost component in PLN.
-        energy_cost_net:
+    CostMetric:
+      type: object
+      properties:
+        energy_active_import_register_cost:
           type: number
           format: double
-          maximum: 10000000
-          minimum: -10000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          description: Energy cost component in PLN.
-        service_cost_net:
+        distribution_cost:
           type: number
           format: double
-          maximum: 10000000
-          minimum: -10000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          description: Service cost before tax in PLN.
-        excise:
-          type: number
-          format: double
-          maximum: 10000000
-          minimum: -10000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          description: Excise tax component in PLN.
         vat:
           type: number
           format: double
-          maximum: 10000000
-          minimum: -10000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          description: VAT tax component in PLN.
-        energy_sold_value:
+        total_cost:
           type: number
           format: double
-          maximum: 10000000
-          minimum: -10000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          description: Energy sold value for the aggregation frame in PLN with VAT.
-        energy_balance_value:
-          type: number
-          format: double
-          maximum: 10000000
-          minimum: -10000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          description: Energy balance value for the aggregation frame in PLN.
-      required:
-      - end
-      - energy_balance_value
-      - energy_cost_net
-      - energy_sold_value
-      - excise
-      - fae_cost
-      - fix_dist_cost_net
-      - service_cost_net
-      - start
-      - var_dist_cost_net
-      - vat
-    MeterPowerCostResponse:
+    CostSummary:
       type: object
       properties:
-        resolution:
-          type: string
-        frames:
-          type: array
-          items:
-            $ref: '#/components/schemas/MeterPowerCostFrame'
-        fae_total_cost:
+        energy_active_import_register_cost_total:
           type: number
           format: double
-          maximum: 1000000000000
-          minimum: -1000000000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          readOnly: true
-        total_energy_sold_value:
+        distribution_cost_total:
           type: number
           format: double
-          maximum: 1000000000000
-          minimum: -1000000000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          readOnly: true
-        total_energy_balance_value:
+        vat_total:
           type: number
           format: double
-          maximum: 1000000000000
-          minimum: -1000000000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          readOnly: true
-        total_sales_cost_net:
+        total_cost_total:
           type: number
           format: double
-          maximum: 1000000000000
-          minimum: -1000000000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          readOnly: true
-        total_service_cost_net:
-          type: number
-          format: double
-          maximum: 1000000000000
-          minimum: -1000000000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          readOnly: true
-        total_dist_cost_net:
-          type: number
-          format: double
-          maximum: 1000000000000
-          minimum: -1000000000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          readOnly: true
-        total_excise:
-          type: number
-          format: double
-          maximum: 1000000000000
-          minimum: -1000000000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          readOnly: true
-        total_vat:
-          type: number
-          format: double
-          maximum: 1000000000000
-          minimum: -1000000000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          readOnly: true
-        total_energy_cost_with_service:
-          type: number
-          format: double
-          maximum: 1000000000000
-          minimum: -1000000000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          readOnly: true
-        total_var_dist_cost_net:
-          type: number
-          format: double
-          maximum: 1000000000000
-          minimum: -1000000000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        total_fix_dist_cost_net:
-          type: number
-          format: double
-          maximum: 1000000000000
-          minimum: -1000000000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        total_energy_cost_net:
-          type: number
-          format: double
-          maximum: 1000000000000
-          minimum: -1000000000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-      required:
-      - fae_total_cost
-      - frames
-      - resolution
-      - total_dist_cost_net
-      - total_energy_balance_value
-      - total_energy_cost_net
-      - total_energy_cost_with_service
-      - total_energy_sold_value
-      - total_excise
-      - total_fix_dist_cost_net
-      - total_sales_cost_net
-      - total_service_cost_net
-      - total_var_dist_cost_net
-      - total_vat
-    MeterPowerUsageFrame:
+    CarbonMetric:
       type: object
       properties:
-        start:
-          type: string
-          format: date-time
-          description: Start time of the aggregation period. Inclusive.
-        end:
-          type: string
-          format: date-time
-          description: End time of the aggregation period. Exclusive.
-        is_live:
-          type: boolean
-          description: Whether the aggregation frame overlaps with the current time.
-        fae_usage:
+        carbon_footprint:
           type: number
           format: double
-          maximum: 10000000
-          minimum: -10000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          description: Sum of forward active energy measured in kWh.
-        rae:
-          type: number
-          format: double
-          maximum: 10000000
-          minimum: -10000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          description: Sum of reverse active energy measured in kWh.
-        energy_balance:
-          type: number
-          format: double
-          maximum: 10000000
-          minimum: -10000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          description: Energy balance for the aggregation frame in kWh.
-      required:
-      - end
-      - energy_balance
-      - fae_usage
-      - rae
-      - start
-    TgePricingFrame:
+    CarbonSummary:
       type: object
       properties:
-        price_net:
+        carbon_footprint_total:
           type: number
           format: double
-          maximum: 100000
-          minimum: -100000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          description: Net price in PLN
-        price_gross:
+    PricingMetric:
+      type: object
+      properties:
+        tge_price:
           type: number
           format: double
-          maximum: 100000
-          minimum: -100000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          description: Gross price in PLN
-        price_gross_avg:
-          type: number
-          format: double
-          maximum: 100000
-          minimum: -100000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          description: Average gross price in PLN
         dist_price:
           type: number
           format: double
-          maximum: 100000
-          minimum: -100000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
         service_price:
           type: number
           format: double
-          maximum: 100000
-          minimum: -100000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
         base_price:
           type: number
           format: double
-          maximum: 100000
-          minimum: -100000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
         vat_component:
           type: number
           format: double
-          maximum: 100000
-          minimum: -100000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
         excise_component:
           type: number
           format: double
-          maximum: 100000
-          minimum: -100000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
         full_price:
           type: number
           format: double
-          maximum: 100000
-          minimum: -100000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        price_net_avg:
+        price_net:
           type: number
           format: double
-          maximum: 100000
-          minimum: -100000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          description: Average net price in PLN
-        start:
-          type: string
-          format: date-time
-          description: Start time of the aggregation period. Inclusive.
-        end:
-          type: string
-          format: date-time
-          description: End time of the aggregation period. Exclusive.
-        is_live:
-          type: boolean
+        price_gross:
+          type: number
+          format: double
+        price_prosumer_net:
+          type: number
+          format: double
+        price_prosumer_gross:
+          type: number
+          format: double
         is_cheap:
           type: boolean
         is_expensive:
           type: boolean
-      required:
-      - end
-      - start
-    TgePricingResponse:
+    PricingSummary:
       type: object
       properties:
+        tge_price_avg:
+          type: number
+          format: double
+        dist_price_avg:
+          type: number
+          format: double
+        service_price_avg:
+          type: number
+          format: double
+        base_price_avg:
+          type: number
+          format: double
+        vat_component_avg:
+          type: number
+          format: double
+        excise_component_avg:
+          type: number
+          format: double
+        full_price_avg:
+          type: number
+          format: double
         price_net_avg:
           type: number
           format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
         price_gross_avg:
           type: number
           format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        frames:
-          type: array
-          items:
-            $ref: '#/components/schemas/TgePricingFrame'
-      required:
-      - frames
-      - price_gross_avg
-      - price_net_avg
-    UnifiedMetricsResponse:
-      type: object
-      description: Response serializer for unified metrics endpoint.
-      properties:
-        frames:
-          type: array
-          items: {}
-          description: Time series frames with nested metrics structure
-        summary:
-          type: object
-          additionalProperties: {}
-          description: Summary aggregates grouped by metric
-      required:
-      - frames
-      - summary
+        price_prosumer_net_avg:
+          type: number
+          format: double
+        price_prosumer_gross_avg:
+          type: number
+          format: double
   securitySchemes:
     TokenAuthentication:
       type: apiKey
