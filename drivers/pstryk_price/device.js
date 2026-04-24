@@ -153,6 +153,14 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
     }
   }
 
+  _getCurrentFrameFromPrices(validFrames, at = new Date()) {
+    return validFrames.find((frame) => {
+      const frameStart = new Date(frame.start);
+      const frameEnd = new Date(frame.end);
+      return at >= frameStart && at < frameEnd;
+    });
+  }
+
   /**
    * Update capabilities from cached data
    */
@@ -165,18 +173,15 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
     try {
       const now = new Date();
       const currentPrices = this._cachedData.currentPrices;
-      
-      // Find current frame
-      const currentFrame = currentPrices.find((frame) => {
-        const frameStart = new Date(frame.start);
-        const frameEnd = new Date(frame.end);
-        return now >= frameStart && now < frameEnd;
-      });
+      const currentFrame = this._getCurrentFrameFromPrices(currentPrices, now);
 
       if (!currentFrame) {
         this.log("No current frame found in cached data");
         return;
       }
+
+      this._validFrames = currentPrices;
+      this._currentFrame = currentFrame;
 
       // Update basic price capabilities
       await this.setCapabilityValue("current_hour_price", currentFrame.price_gross);
@@ -232,9 +237,6 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
       // Update price position capability
       await this.updatePricePositionCapability();
 
-      // Store frames for helper functions
-      this._validFrames = currentPrices;
-      this._currentFrame = currentFrame;
 
     } catch (error) {
       this.error("Error updating capabilities from cache:", error);
@@ -942,16 +944,16 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
   calculateExactPricePosition(hourWindow, cheapestFirst = true) {
     // Use cached data if available
     const validFrames = this._cachedData?.currentPrices || this._validFrames || [];
-    const currentFrame = this._currentFrame;
+    const now = new Date();
+    const currentFrame = this._getCurrentFrameFromPrices(validFrames, now);
 
     if (!currentFrame || validFrames.length === 0) {
       return { position: 0, totalHours: 0 };
     }
 
-    const currentHourStart = this._getCurrentHourStart();
-    const now = new Date(); // Still needed for windowEnd calculation
-    const windowEnd = new Date(now);
-    windowEnd.setHours(now.getHours() + hourWindow);
+    const currentHourStart = new Date(currentFrame.start);
+    const windowEnd = new Date(currentHourStart);
+    windowEnd.setHours(currentHourStart.getHours() + hourWindow);
 
     // Get all frames within the window (including the current hour)
     const windowFrames = validFrames.filter((frame) => {
@@ -1054,17 +1056,17 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
   _calculateTiedPosition(hourWindow) {
     // Use cached data if available
     const validFrames = this._cachedData?.currentPrices || this._validFrames || [];
-    const currentFrame = this._currentFrame;
+    const now = new Date();
+    const currentFrame = this._getCurrentFrameFromPrices(validFrames, now);
 
     if (!currentFrame || validFrames.length === 0) {
-      this.log(`No data available for ${hourWindow}h window - returning worst position ${hourWindow}`);
+      this.log(`No current price data available for ${hourWindow}h window - returning worst position ${hourWindow}`);
       return hourWindow;  // Return worst position for this window
     }
 
-    const currentHourStart = this._getCurrentHourStart();
-    const now = new Date(); // Still needed for windowEnd calculation
-    const windowEnd = new Date(now);
-    windowEnd.setHours(now.getHours() + hourWindow);
+    const currentHourStart = new Date(currentFrame.start);
+    const windowEnd = new Date(currentHourStart);
+    windowEnd.setHours(currentHourStart.getHours() + hourWindow);
 
     // Get all frames within the window (including the current hour)
     const windowFrames = validFrames.filter((frame) => {
@@ -1088,6 +1090,10 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
 
     // Find current frame's position in the price tiers
     const currentTier = this.findTierForCurrentHour(priceTiers, currentFrame);
+    if (!currentTier) {
+      this.log(`Current price tier not found for ${hourWindow}h window - returning worst position ${hourWindow}`);
+      return hourWindow;
+    }
 
     // Assign sequential position values to tiers
     const positionedTiers = this.assignTierPositions(priceTiers);
@@ -1095,7 +1101,7 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
     // Find and return the position for current tier
     const currentTierInfo = positionedTiers.find((tier) => tier.price === currentTier.price);
 
-    return currentTierInfo ? currentTierInfo.position : 1.0;
+    return currentTierInfo ? currentTierInfo.position : hourWindow;
   }
 
   /**
@@ -1135,11 +1141,9 @@ module.exports = class PstrykPriceDevice extends Homey.Device {
   findTierForCurrentHour(priceTiers, currentFrame) {
     const currentPrice = Number(currentFrame.price_gross.toFixed(6));
 
-    return (
-      priceTiers.find(
-        (tier) => Math.abs(tier.price - currentPrice) < 0.000001, // Floating point comparison tolerance
-      ) || priceTiers[0]
-    ); // Fallback to cheapest tier
+    return priceTiers.find(
+      (tier) => Math.abs(tier.price - currentPrice) < 0.000001, // Floating point comparison tolerance
+    );
   }
 
   /**

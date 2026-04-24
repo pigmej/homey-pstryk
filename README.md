@@ -35,7 +35,7 @@ The app provides the following device capabilities:
 |------------|-------------|------|
 | `current_hour_price` | Current electricity price | number |
 | `current_hour_price_position` | Current hour's price position when sorted by price (identical prices get same position) | number |
-| `current_hour_price_vs_3rd_cheapest_8h` | Indicates if current hour is among the 3 cheapest hours in the next 8 hour window (0=not cheapest, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest) | number |
+| `current_hour_price_vs_3rd_cheapest_8h` | Rank only within the 3 cheapest hours in the next 8 hour window (0=not among top 3, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest) | number |
 | `current_hour_value` | current hour value, use this to cross check that everything works as expected | string |
 | `daily_average_price` | Average electricity price value | number |
 
@@ -65,11 +65,11 @@ The app provides the following device capabilities:
 
 | Capability | Description | Type |
 |------------|-------------|------|
-| `current_hour_in_cheapest` | Indicates if current hour is among the 3 cheapest hours in the next 8 hour window (0=not cheapest, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest) | number |
-| `current_hour_in_cheapest_12h` | Indicates if current hour is among the 3 cheapest hours in the next 12 hour window (0=not cheapest, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest) | number |
-| `current_hour_in_cheapest_24h` | Indicates if current hour is among the 3 cheapest hours in the next 24 hour window (0=not cheapest, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest) | number |
-| `current_hour_in_cheapest_36h` | Indicates if current hour is among the 3 cheapest hours in the next 36 hour window (0=not cheapest, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest) | number |
-| `current_hour_in_cheapest_4h` | Indicates if current hour is among the 3 cheapest hours in the next 4 hour window (0=not cheapest, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest) | number |
+| `current_hour_in_cheapest` | Rank only within the 3 cheapest hours in the next 8 hour window (0=not among top 3, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest) | number |
+| `current_hour_in_cheapest_12h` | Rank only within the 3 cheapest hours in the next 12 hour window (0=not among top 3, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest) | number |
+| `current_hour_in_cheapest_24h` | Rank only within the 3 cheapest hours in the next 24 hour window (0=not among top 3, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest) | number |
+| `current_hour_in_cheapest_36h` | Rank only within the 3 cheapest hours in the next 36 hour window (0=not among top 3, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest) | number |
+| `current_hour_in_cheapest_4h` | Rank only within the 3 cheapest hours in the next 4 hour window (0=not among top 3, 1=cheapest, 2=2nd cheapest, 3=3rd cheapest) | number |
 | `current_hour_price_position` | Current hour's price position when sorted by price (identical prices get same position) | number |
 
 ### System
